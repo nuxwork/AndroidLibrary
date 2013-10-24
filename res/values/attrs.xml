@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="SeekBar">
+        <attr name="orientation" format="enum">
+            <enum name="horizontal" value="0" />
+            <enum name="vertical" value="1" />
+        </attr>
+        <attr name="max" format="integer" />
+        <attr name="progress" format="integer" />
+        <attr name="progressHeight" format="dimension" />
+        <attr name="progressDrawable" format="color|reference" />
+        <attr name="thumb" format="color|reference" />
+        <attr name="thumbHeight" format="dimension" />
+        <attr name="thumbWidth" format="dimension" />
+        <attr name="thumbOffset" format="dimension" />
+    </declare-styleable>
+
+</resources>
