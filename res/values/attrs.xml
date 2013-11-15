@@ -15,5 +15,15 @@
         <attr name="thumbWidth" format="dimension" />
         <attr name="thumbOffset" format="dimension" />
     </declare-styleable>
+    <declare-styleable name="CircleLayout">
+        <attr name="rotationOffset" format="float" />
+        <attr name="startAngle" format="float" />
+    </declare-styleable>
+    <declare-styleable name="NumberView">
+        <attr name="text" format="string|reference"></attr>
+        <attr name="textSize" format="dimension|reference"></attr>
+        <attr name="textColor" format="reference"></attr>
+        <attr name="angle" format="float"></attr>
+    </declare-styleable>
 
 </resources>
