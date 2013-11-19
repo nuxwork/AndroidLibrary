@@ -11,10 +11,10 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.StateListDrawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 
 import com.swordy.library.android.R;
 
@@ -43,6 +43,8 @@ public class NumberView extends View
     private Drawable mTextColor;
     
     private float mAngle;
+    
+    private long mPressedTime = System.currentTimeMillis();
     
     public NumberView(Context context)
     {
@@ -84,10 +86,18 @@ public class NumberView extends View
             mText = a.getString(R.styleable.NumberView_text);
             mTextSize = a.getDimensionPixelSize(R.styleable.NumberView_textSize, 70);
             mTextColor = a.getDrawable(R.styleable.NumberView_textColor);
-            mAngle = a.getFloat(R.styleable.NumberView_angle, 0f);
+            mAngle = a.getDimensionPixelSize(R.styleable.NumberView_angle, 0);
         }
         
         mPaint.setTextSize(mTextSize);
+    }
+    
+    public void setTextColor(Drawable drawable)
+    {
+        if (mTextColor == drawable)
+            return;
+        
+        mTextColor = drawable;
     }
     
     @Override
@@ -98,10 +108,17 @@ public class NumberView extends View
             case MotionEvent.ACTION_DOWN:
                 setPressed(true);
                 invalidate();
+                mPressedTime = System.currentTimeMillis();
                 return true;
             case MotionEvent.ACTION_UP:
+                boolean pressed = isPressed();
                 setPressed(false);
-                invalidate();
+                long duration = System.currentTimeMillis() - mPressedTime;
+                postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
+                if (pressed)
+                {
+                    performClick();
+                }
                 return true;
             case MotionEvent.ACTION_CANCEL:
                 setPressed(false);
@@ -150,7 +167,7 @@ public class NumberView extends View
         mDrawingRectF.set(mDrawingRect);
         
         //-------  draw background -------
-        boolean canDrawBg = false;
+        boolean canDraw = false;
         Drawable background = getBackground();
         if (background == null)
         {
@@ -162,46 +179,32 @@ public class NumberView extends View
             {
                 mPaint.setColor(COLOR_BG_NORMAL);
             }
-            canDrawBg = true;
+            canDraw = true;
         }
         else
         {
             background.setState(getDrawableState());
-            if (background instanceof StateListDrawable)
+            Drawable current = background.getCurrent();
+            if (current instanceof ColorDrawable)
             {
-                Drawable current = background.getCurrent();
-                if (current instanceof ColorDrawable)
-                {
-                    mPaint.setColor(((ColorDrawable)current).getColor());
-                    canDrawBg = true;
-                }
-                else
-                {
-                    current.draw(canvas);
-                }
-            }
-            else if (background instanceof ColorDrawable)
-            {
-                mPaint.setColor(((ColorDrawable)background).getColor());
-                canDrawBg = true;
+                mPaint.setColor(((ColorDrawable)current).getColor());
+                canDraw = true;
             }
             else
             {
-                background.setBounds(mDrawingRect);
-                background.draw(canvas);
+                current.setBounds(mDrawingRect);
+                current.draw(canvas);
+                canDraw = false;
             }
         }
         
-        if (canDrawBg)
+        if (canDraw)
         {
             canvas.drawRoundRect(mDrawingRectF, mAngle, mAngle, mPaint);
         }
         
         // ------------ draw text ------------
-        if (mText == null || "".equals(mText))
-            return;
-        
-        boolean canDrawText = false;
+        canDraw = false;
         if (mTextColor == null)
         {
             if (isPressed())
@@ -212,38 +215,34 @@ public class NumberView extends View
             {
                 mPaint.setColor(COLOR_TEXT_NORMAL);
             }
-            canDrawText = true;
+            canDraw = true;
             
         }
-        else if (mTextColor instanceof StateListDrawable)
+        else
         {
             mTextColor.setState(getDrawableState());
             Drawable current = mTextColor.getCurrent();
             if (current instanceof ColorDrawable)
             {
                 mPaint.setColor(((ColorDrawable)current).getColor());
-                canDrawText = true;
+                canDraw = true;
             }
             else
             {
+                current.setBounds(mDrawingRect);
                 current.draw(canvas);
+                canDraw = false;
             }
         }
-        else if (mTextColor instanceof ColorDrawable)
-        {
-            mPaint.setColor(((ColorDrawable)mTextColor).getColor());
-            canDrawText = true;
-        }
-        else
-        {
-            mTextColor.draw(canvas);
-        }
         
-        if (canDrawText)
+        if (mText == null || "".equals(mText))
+            return;
+        
+        if (canDraw)
         {
             canvas.drawText(mText,
                 mDrawingRectF.centerX(),
-                (float)(mDrawingRectF.centerY() + mTextSize * 0.75 / 2),
+                (float)(mDrawingRectF.centerY() + mTextSize * 0.375),
                 mPaint);
         }
         

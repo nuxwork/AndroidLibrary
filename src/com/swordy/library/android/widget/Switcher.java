@@ -3,68 +3,38 @@ package com.swordy.library.android.widget;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Paint.FontMetrics;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup.LayoutParams;
+import android.widget.Checkable;
 
-public class Switcher extends View
+import com.swordy.library.android.R;
+
+public class Switcher extends View implements Checkable
 {
     private static final String TAG = "Switcher";
     
     private Context mContext;
     
-    //---------- text ------------
+    private Drawable mThumb;
+    
     private String mTextOn;
     
     private String mTextOff;
     
-    private Paint mTextPaint;
+    private Drawable mTextColor;
     
     private int mTextSize;
     
-    private int mTextTop;
+    private Rect mDrawingRect;
     
-    private int mTextOnLeft;
+    boolean mChecked;
     
-    private int mTextOffLeft;
-    
-    private int mCheckedTextColor;
-    
-    private int mUnCheckedTextColor;
-    
-    //-------- thumb -------
-    
-    private Drawable mThumb;
-    
-    private int mThumbId;
-    
-    private int mThumbWidthMeasureSpec;
-    
-    private int mThumbHeightMeasureSpec;
-    
-    private int mThumbWidth;
-    
-    private int mThumbHeight;
-    
-    private int mPreTouchX;
-    
-    private int mThumbOffset;
-    
-    //------ background -------
-    
-    private int mDrawableWidth;
-    
-    private int mDrawableHeight;
-    
-    private boolean mChecked;
-    
-    //---------- listener ----------
     private OnCheckedChangeListener mOnCheckedChangeListener;
+    
+    private static final int[] CHECKED_STATE_SET = {android.R.attr.state_checked};
     
     public Switcher(Context context)
     {
@@ -84,384 +54,151 @@ public class Switcher extends View
     
     protected void onCreate(Context context, AttributeSet attrs, int defStyle)
     {
-        // TODO init variables
         mContext = context;
-        
-        mThumbOffset = 0;
-        mThumbWidth = -1;
-        mThumbHeight = -1;
-        mThumbWidthMeasureSpec = LayoutParams.WRAP_CONTENT;
-        mThumbHeightMeasureSpec = LayoutParams.WRAP_CONTENT;
-        
-        mCheckedTextColor = 0xffeeeeee;
-        mUnCheckedTextColor = 0xff666666;
-        mTextPaint = new Paint();
-        mTextPaint.setAntiAlias(true);
-        
-        setFocusable(true);
+        mDrawingRect = new Rect();
+        setClickable(true);
         
         if (attrs == null)
-            return;
-        
-        TypedArray a = null;// context.obtainStyledAttributes(attrs, attrs,
-                            // defStyleAttr, defStyleRes)
-        // TODO init from attrs
-    }
-    
-    public boolean isChecked()
-    {
-        return mChecked;
-    }
-    
-    public void setChecked(boolean isChecked)
-    {
-        if (mChecked == isChecked)
-            return;
-        
-        updateCheckState(isChecked, false);
-    }
-    
-    private void updateCheckState(boolean isChecked, boolean redraw)
-    {
-        if (redraw || mChecked != isChecked)
         {
-            int offset = 0;
-            
-            if (isChecked)
-                offset = mDrawableWidth - mThumbWidth;
-            
-            if (mThumbOffset != offset)
-            {
-                mThumbOffset = offset;
-                invalidate();
-            }
-        }
-        
-        if (mChecked == isChecked)
-            return;
-        
-        mChecked = isChecked;
-        
-        if (mOnCheckedChangeListener != null)
-            mOnCheckedChangeListener.onCheckedChanged(this, isChecked);
-    }
-    
-    public OnCheckedChangeListener getOnCheckedChangeListener()
-    {
-        return mOnCheckedChangeListener;
-    }
-    
-    public void setOnCheckedChangeListener(OnCheckedChangeListener listener)
-    {
-        if (mOnCheckedChangeListener == listener)
-            return;
-        
-        mOnCheckedChangeListener = listener;
-        
-        boolean clickable = !(listener == null);
-        setClickable(clickable);
-    }
-    
-    public String getTextOn()
-    {
-        return mTextOn;
-    }
-    
-    public void setTextOn(String textOn)
-    {
-        if (mTextOn == textOn)
-            return;
-        
-        if (textOn != null && textOn.equals(mTextOn))
-            return;
-        
-        mTextOn = textOn;
-        
-        requestLayout();
-    }
-    
-    public String getTextOff()
-    {
-        return mTextOff;
-    }
-    
-    public void setTextOff(String textOff)
-    {
-        if (mTextOff == textOff)
-            return;
-        
-        if (textOff != null && textOff.equals(mTextOff))
-            return;
-        
-        mTextOff = textOff;
-        
-        requestLayout();
-    }
-    
-    public int getTextSize()
-    {
-        return mTextSize;
-    }
-    
-    public void setTextSize(int textSize)
-    {
-        if (mTextSize == textSize)
-            return;
-        
-        mTextSize = textSize;
-        mTextPaint.setTextSize(textSize);
-        
-        requestLayout();
-    }
-    
-    /**
-     * @param state
-     *            is switcher checked or not
-     * @param color
-     *            text color
-     */
-    public void setTextColor(boolean state, int color)
-    {
-        if (state)
-        {
-            if (mCheckedTextColor == color)
-                return;
-            
-            mCheckedTextColor = color;
-        }
-        else
-        {
-            if (mUnCheckedTextColor == color)
-                return;
-            
-            mUnCheckedTextColor = color;
-        }
-        
-        invalidate();
-    }
-    
-    public int getTextColor(boolean state)
-    {
-        if (state)
-            return mCheckedTextColor;
-        else
-            return mUnCheckedTextColor;
-        
-    }
-    
-    public Drawable getThumb()
-    {
-        return mThumb;
-    }
-    
-    /**
-     * 
-     * @param thumb
-     */
-    public void setThumb(Drawable thumb)
-    {
-        if (mThumb == thumb)
-        {
+            mChecked = false;
             return;
         }
         
-        if (mThumb != null)
-        {
-            mThumb.setCallback(null);
-            unscheduleDrawable(mThumb);
-        }
-        
-        mThumb = thumb;
-        
-        if (thumb != null)
-        {
-            thumb.setCallback(this);
-            if (thumb.isStateful())
-            {
-                thumb.setState(getDrawableState());
-            }
-        }
-        
-        requestLayout();
-    }
-    
-    /**
-     * 
-     * @param resId
-     * @see #setThumb(Drawable thumb)
-     */
-    public void setThumbResources(int resId)
-    {
-        if (mThumbId == resId)
-            return;
-        
-        mThumbId = resId;
-        setThumb(mContext.getResources().getDrawable(resId));
-    }
-    
-    public void setThumbSize(int width, int height)
-    {
-        mThumbWidthMeasureSpec = width;
-        mThumbHeightMeasureSpec = height;
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Switcher, defStyle, 0);
+        mThumb = a.getDrawable(R.styleable.Switcher_thumb);
+        mTextOn = a.getString(R.styleable.Switcher_textOn);
+        mTextOff = a.getString(R.styleable.Switcher_textOff);
+        mTextColor = a.getDrawable(R.styleable.Switcher_textColor);
+        mTextSize = a.getDimensionPixelSize(R.styleable.Switcher_textSize, 0);
+        boolean checked = a.getBoolean(R.styleable.Switcher_checked, false);
+        setChecked(checked);
+        a.recycle();
     }
     
     @Override
-    public boolean onTouchEvent(MotionEvent event)
+    protected int[] onCreateDrawableState(int extraSpace)
     {
-        switch (event.getAction())
+        final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
+        if (isChecked())
         {
-            case MotionEvent.ACTION_DOWN:
-                mPreTouchX = (int)event.getX();
-                
-                if (mPreTouchX < mThumbOffset || mPreTouchX > mThumbWidth + mThumbOffset)
-                {
-                    mPreTouchX = -1;
-                    
-                    updateCheckState(!mChecked, true);
-                }
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (mPreTouchX == -1)
-                    break;
-                
-                int x = (int)event.getX();
-                
-                int offset = x - mPreTouchX + mThumbOffset;
-                mPreTouchX = x;
-                if (offset > 0 && offset < mDrawableWidth - mThumbWidth)
-                {
-                    mThumbOffset = offset;
-                    invalidate();
-                }
-                break;
-            case MotionEvent.ACTION_UP:
-                if (mThumbOffset + mThumbWidth / 2f <= mDrawableWidth / 2f)
-                {
-                    updateCheckState(false, true);
-                }
-                else
-                {
-                    updateCheckState(true, true);
-                }
-                break;
+            mergeDrawableStates(drawableState, CHECKED_STATE_SET);
         }
-        
-        return super.onTouchEvent(event);
+        return drawableState;
     }
     
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
     {
-        measureThumbSize(mThumbWidthMeasureSpec, mThumbHeightMeasureSpec);
+        int width = 0;
+        int height = 0;
         
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = MeasureSpec.getSize(heightMeasureSpec);
-        
-        FontMetrics fm = mTextPaint.getFontMetrics();
-        int textHeight = (int)Math.ceil(fm.descent - fm.ascent);
-        int textOnWidth = mTextOn == null ? -1 : (int)mTextPaint.measureText(mTextOn);
-        int textOffWidth = mTextOff == null ? -1 : (int)mTextPaint.measureText(mTextOff);
         
         Drawable background = getBackground();
-        if (widthMode != MeasureSpec.EXACTLY)
+        Drawable[] drawables = new Drawable[] {background, mThumb};
+        
+        if (widthMode == MeasureSpec.UNSPECIFIED)
         {
-            int bgWidth = background.getIntrinsicWidth();
-            width = Math.max(bgWidth, mThumbWidth);
-            width = Math.max(width, (textOnWidth + textOffWidth));
+            width = getMaxSize(drawables, true);
+            //TODO calculate text size
+        }
+        else
+        {
+            width = MeasureSpec.getSize(widthMeasureSpec);
         }
         
-        if (heightMode != MeasureSpec.EXACTLY)
+        if (heightMode == MeasureSpec.UNSPECIFIED)
         {
-            int bgHeight = background.getIntrinsicHeight();
-            height = Math.max(bgHeight, mThumbHeight);
-            height = Math.max(height, textHeight);
+            height = getMaxSize(drawables, false);
         }
-        
-        mDrawableWidth = width;
-        mDrawableHeight = height;
-        
-        mTextTop = (int)((height + mTextSize) / 2f);
-        mTextOffLeft = (int)((mThumbWidth - textOffWidth) / 2f);
-        mTextOnLeft = (int)((mThumbWidth - textOnWidth) / 2f) + width - mThumbWidth;
-        
-        Log.v(TAG, "text top: " + mTextTop + " textHeight: " + textHeight + " height: " + height);
+        else
+        {
+            height = MeasureSpec.getSize(heightMeasureSpec);
+        }
         
         setMeasuredDimension(width, height);
+        
+        getDrawingRect(mDrawingRect);
     }
     
-    private void measureThumbSize(int width, int height)
+    /**
+     * @param tag true is pointer to width, and false is pointer to height
+     */
+    private int getMaxSize(Drawable[] drawables, boolean tag)
     {
-        //------ width ------
-        if (width == LayoutParams.WRAP_CONTENT)
+        int max = 0;
+        int cur = 0;
+        for (Drawable d : drawables)
         {
-            if (mThumb != null)
-                mThumbWidth = mThumb.getIntrinsicWidth();
+            if (d != null)
+            {
+                if (tag)
+                    cur = d.getIntrinsicWidth();
+                else
+                    cur = d.getIntrinsicHeight();
+                
+                if (cur > max)
+                    max = cur;
+            }
         }
-        else if (width == LayoutParams.MATCH_PARENT)
-        {
-            mThumbWidth = mDrawableWidth;
-        }
-        else
-        {
-            mThumbWidth = width;
-        }
+        return max;
+    }
+    
+    @Override
+    public boolean onTouchEvent(MotionEvent event)
+    {
+        //TODO 屏蔽
+        return super.onTouchEvent(event);
+    }
+    
+    @Override
+    protected void onDraw(Canvas canvas)
+    {
+        super.onDraw(canvas);
         
-        //------ height ------
-        if (height == LayoutParams.WRAP_CONTENT)
+    }
+    
+    @Override
+    public boolean performClick()
+    {
+        toggle();
+        return super.performClick();
+    }
+    
+    private void setChecked(boolean checked, boolean fromUser)
+    {
+        int[] state = {};
+        if (checked)
         {
-            if (mThumb != null)
-                mThumbHeight = mThumb.getIntrinsicHeight();
-        }
-        else if (height == LayoutParams.MATCH_PARENT)
-        {
-            mThumbHeight = mDrawableHeight;
+            state = new int[] {android.R.attr.state_checked};
         }
         else
         {
-            mThumbHeight = height;
+            //            state = new int[]{android.R.attr.state_}
         }
     }
     
     @Override
-    public void draw(Canvas canvas)
+    public void setChecked(boolean checked)
     {
-        Drawable background = getBackground();
-        if (background != null)
-        {
-            background.setBounds(0, 0, mDrawableWidth, mDrawableHeight);
-            background.draw(canvas);
-        }
         
-        if (mThumb != null)
-        {
-            mThumb.setBounds(mThumbOffset, 0, mThumbWidth + mThumbOffset, mThumbHeight);
-            mThumb.draw(canvas);
-        }
-        
-        int textColor = 0;
-        // left
-        if (mTextOff != null && !mTextOff.equals(""))
-        {
-            textColor = !mChecked ? mCheckedTextColor : mUnCheckedTextColor;
-            mTextPaint.setColor(textColor);
-            canvas.drawText(mTextOff, mTextOffLeft, mTextTop, mTextPaint);
-        }
-        
-        // right
-        if (mTextOn != null && !mTextOn.equals(""))
-        {
-            textColor = mChecked ? mCheckedTextColor : mUnCheckedTextColor;
-            mTextPaint.setColor(textColor);
-            canvas.drawText(mTextOn, mTextOnLeft, mTextTop, mTextPaint);
-        }
-        
+    }
+    
+    @Override
+    public boolean isChecked()
+    {
+        return false;
+    }
+    
+    @Override
+    public void toggle()
+    {
+        setChecked(!mChecked);
     }
     
     public static interface OnCheckedChangeListener
     {
-        void onCheckedChanged(Switcher switcher, boolean isChecked);
+        void onCheckedChanged(SwitcherOld switcher, boolean isChecked);
     }
-    
 }

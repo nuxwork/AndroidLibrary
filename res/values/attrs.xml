@@ -9,10 +9,10 @@
         <attr name="max" format="integer" />
         <attr name="progress" format="integer" />
         <attr name="progressHeight" format="dimension" />
-        <attr name="progressDrawable" format="color|reference" />
-        <attr name="thumb" format="color|reference" />
-        <attr name="thumbHeight" format="dimension" />
+        <attr name="progressDrawable" format="reference|color" />
+        <attr name="thumb" format="reference|color" />
         <attr name="thumbWidth" format="dimension" />
+        <attr name="thumbHeight" format="dimension" />
         <attr name="thumbOffset" format="dimension" />
     </declare-styleable>
     <declare-styleable name="CircleLayout">
@@ -20,13 +20,18 @@
         <attr name="startAngle" format="float" />
     </declare-styleable>
     <declare-styleable name="NumberView">
-        <attr name="text" format="string|reference"/>
-        <attr name="textSize" format="dimension|reference"/>
-        <attr name="textColor" format="reference"/>
-        <attr name="angle" format="float"/>
+        <attr name="text" format="string" />
+        <attr name="textSize" format="dimension" />
+        <attr name="textColor" format="reference|color" />
+        <attr name="angle" format="float" />
     </declare-styleable>
-    <declare-styleable name="RegionButton">
-        <attr name="map" format="reference"/>
+    <declare-styleable name="Switcher">
+        <attr name="checked" format="boolean" />
+        <attr name="thumb" />
+        <attr name="textOn" format="string" />
+        <attr name="textOff" format="string" />
+        <attr name="textSize" />
+        <attr name="textColor" />
     </declare-styleable>
 
 </resources>

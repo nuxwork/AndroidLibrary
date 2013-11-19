@@ -179,32 +179,26 @@ public class RegionButton extends View
         
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
-        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
         
         Drawable background = getBackground();
+        Drawable[] drawables = new Drawable[] {background};
         
-        // Record our dimensions if they are known;
-        if (widthMode != MeasureSpec.UNSPECIFIED)
+        if (widthMode == MeasureSpec.UNSPECIFIED)
         {
-            if (background != null)
-                width = background.getIntrinsicWidth();
+            width = getMaxSize(drawables, true);
+        }
+        else
+        {
+            width = MeasureSpec.getSize(widthMeasureSpec);
         }
         
-        if (heightMode != MeasureSpec.UNSPECIFIED)
+        if (heightMode == MeasureSpec.UNSPECIFIED)
         {
-            if (background != null)
-                height = background.getIntrinsicHeight();
+            height = getMaxSize(drawables, false);
         }
-        
-        if (widthMode == MeasureSpec.EXACTLY)
+        else
         {
-            width = widthSize;
-        }
-        
-        if (heightMode == MeasureSpec.EXACTLY)
-        {
-            height = heightSize;
+            height = MeasureSpec.getSize(heightMeasureSpec);
         }
         
         setMeasuredDimension(width, height);
@@ -239,7 +233,6 @@ public class RegionButton extends View
     protected void onLayout(boolean changed, int left, int top, int right, int bottom)
     {
         super.onLayout(changed, left, top, right, bottom);
-        getDrawingRect(mDrawingRect);
         
         Bitmap bmp = mRegionMapBitmap;
         if (bmp != null)
