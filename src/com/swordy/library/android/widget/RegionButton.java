@@ -21,8 +21,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 
-import com.swordy.library.android.util.ViewUtil;
-
 /**
  * @author  yWX191142
  */
