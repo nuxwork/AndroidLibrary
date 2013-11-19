@@ -20,10 +20,13 @@
         <attr name="startAngle" format="float" />
     </declare-styleable>
     <declare-styleable name="NumberView">
-        <attr name="text" format="string|reference"></attr>
-        <attr name="textSize" format="dimension|reference"></attr>
-        <attr name="textColor" format="reference"></attr>
-        <attr name="angle" format="float"></attr>
+        <attr name="text" format="string|reference"/>
+        <attr name="textSize" format="dimension|reference"/>
+        <attr name="textColor" format="reference"/>
+        <attr name="angle" format="float"/>
+    </declare-styleable>
+    <declare-styleable name="RegionButton">
+        <attr name="map" format="reference"/>
     </declare-styleable>
 
 </resources>
