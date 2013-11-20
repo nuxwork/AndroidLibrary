@@ -338,8 +338,6 @@ public class RegionButton extends View
                 
                 mPressedRegionId = id;
                 setPressed(true);
-                invalidate();
-                mPressedTime = System.currentTimeMillis();
                 
                 if (isEnabled())
                 {
@@ -362,8 +360,6 @@ public class RegionButton extends View
                 int id = mPressedRegionId;
                 mPressedRegionId = NO_REGION_ID;
                 setPressed(false);
-                long duration = System.currentTimeMillis() - mPressedTime;
-                postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
                 
                 removeRegionLongPressCallback();
                 if (isEnabled())
@@ -384,7 +380,6 @@ public class RegionButton extends View
                 int id = mPressedRegionId;
                 mPressedRegionId = NO_REGION_ID;
                 setPressed(false);
-                invalidate();
                 mFlags &= ~FLAG_REGION_PRESSED;
                 
                 removeRegionLongPressCallback();
@@ -409,7 +404,6 @@ public class RegionButton extends View
                     mPressedRegionId = NO_REGION_ID;
                     mFlags &= ~FLAG_REGION_PRESSED;
                     setPressed(false);
-                    invalidate();
                 }
                 else if (perfermRegionTouch(mPressedRegionId, event))
                     ;
@@ -467,9 +461,18 @@ public class RegionButton extends View
     @Override
     protected void drawableStateChanged()
     {
+        super.drawableStateChanged();
+        
         if (mRegionDrawable != null)
             mRegionDrawable.setLevel(mPressedRegionId);
-        super.drawableStateChanged();
+        
+        long duration = System.currentTimeMillis() - mPressedTime;
+        if (isPressed()){
+            invalidate();
+            mPressedTime = System.currentTimeMillis();
+        }else{
+            postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
+        }
     }
     
     @Override

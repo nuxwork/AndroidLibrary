@@ -107,14 +107,10 @@ public class NumberView extends View
         {
             case MotionEvent.ACTION_DOWN:
                 setPressed(true);
-                invalidate();
-                mPressedTime = System.currentTimeMillis();
                 return true;
             case MotionEvent.ACTION_UP:
                 boolean pressed = isPressed();
                 setPressed(false);
-                long duration = System.currentTimeMillis() - mPressedTime;
-                postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
                 if (pressed)
                 {
                     performClick();
@@ -122,7 +118,6 @@ public class NumberView extends View
                 return true;
             case MotionEvent.ACTION_CANCEL:
                 setPressed(false);
-                invalidate();
                 return true;
         }
         return super.onTouchEvent(event);
@@ -157,6 +152,26 @@ public class NumberView extends View
         setMeasuredDimension(width, height);
     }
     
+    @Override
+    protected void drawableStateChanged()
+    {
+        super.drawableStateChanged();
+        
+        if (mTextColor != null)
+            mTextColor.setState(getDrawableState());
+        
+        long duration = System.currentTimeMillis() - mPressedTime;
+        if (isPressed())
+        {
+            invalidate();
+            mPressedTime = System.currentTimeMillis();
+        }
+        else
+        {
+            postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
+        }
+    }
+    
     @SuppressLint("NewApi")
     @Override
     public void draw(Canvas canvas)
@@ -183,7 +198,6 @@ public class NumberView extends View
         }
         else
         {
-            background.setState(getDrawableState());
             Drawable current = background.getCurrent();
             if (current instanceof ColorDrawable)
             {
@@ -220,7 +234,6 @@ public class NumberView extends View
         }
         else
         {
-            mTextColor.setState(getDrawableState());
             Drawable current = mTextColor.getCurrent();
             if (current instanceof ColorDrawable)
             {

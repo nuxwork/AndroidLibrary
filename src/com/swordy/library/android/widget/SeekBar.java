@@ -11,6 +11,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ProgressBar;
 
@@ -52,6 +53,8 @@ public class SeekBar extends View
     private Rect mProgressRect;
     
     private OnSeekBarChangeListener mOnSeekBarChangeListener;
+    
+    private long mPressedTime = System.currentTimeMillis();
     
     public SeekBar(Context context)
     {
@@ -240,6 +243,14 @@ public class SeekBar extends View
         {
             mThumb.setState(getDrawableState());
         }
+        
+        long duration = System.currentTimeMillis() - mPressedTime;
+        if (isPressed()){
+            invalidate();
+            mPressedTime = System.currentTimeMillis();
+        }else{
+            postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
+        }
     }
     
     @Override
@@ -373,13 +384,6 @@ public class SeekBar extends View
         
     }
     
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom)
-    {
-        Log.v(TAG, "onLayout");
-        super.onLayout(changed, left, top, right, bottom);
-    }
-    
     private void measureDrawables(int width, int height)
     {
         if (mThumb != null)
@@ -407,10 +411,10 @@ public class SeekBar extends View
     }
     
     @Override
-    protected void onConfigurationChanged(Configuration newConfig)
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom)
     {
-        Log.v(TAG, "onConfigurationChanged");
-        invalidate();
+        Log.v(TAG, "onLayout");
+        super.onLayout(changed, left, top, right, bottom);
     }
     
     @Override
