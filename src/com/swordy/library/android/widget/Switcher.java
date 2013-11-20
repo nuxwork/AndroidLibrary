@@ -1,38 +1,59 @@
 package com.swordy.library.android.widget;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.widget.Checkable;
 
 import com.swordy.library.android.R;
 
 public class Switcher extends View implements Checkable
 {
-    private static final String TAG = "Switcher";
+    public static final String TAG = "Switcher";
+    
+    private static final int TOUCH_EVENT_FILTER_DURATION = 30;
+    
+    private static final int FLAG_THUMB_PRESSED = 0x00000001;
+    
+    private int mFlag = 0;
     
     private Context mContext;
     
     private Drawable mThumb;
     
+    private int mThumbOffset;
+    
     private String mTextOn;
     
     private String mTextOff;
     
-    private Drawable mTextColor;
+    private float mTextOnOffset;
+    
+    private float mTextOffOffset;
     
     private int mTextSize;
     
     private Rect mDrawingRect;
     
+    private Rect mThumbRect;
+    
     boolean mChecked;
     
+    private Paint mTextPaint;
+    
+    private ColorStateList mTextColor;
+    
     private OnCheckedChangeListener mOnCheckedChangeListener;
+    
+    private long mPressedTime = System.currentTimeMillis();
     
     private static final int[] CHECKED_STATE_SET = {android.R.attr.state_checked};
     
@@ -56,10 +77,13 @@ public class Switcher extends View implements Checkable
     {
         mContext = context;
         mDrawingRect = new Rect();
+        mTextPaint = new Paint();
+        mTextPaint.setAntiAlias(true);
         setClickable(true);
         
         if (attrs == null)
         {
+            // TODO attrs = default attrs
             mChecked = false;
             return;
         }
@@ -68,8 +92,9 @@ public class Switcher extends View implements Checkable
         mThumb = a.getDrawable(R.styleable.Switcher_thumb);
         mTextOn = a.getString(R.styleable.Switcher_textOn);
         mTextOff = a.getString(R.styleable.Switcher_textOff);
-        mTextColor = a.getDrawable(R.styleable.Switcher_textColor);
+        mTextColor = a.getColorStateList(R.styleable.Switcher_textAppearance);
         mTextSize = a.getDimensionPixelSize(R.styleable.Switcher_textSize, 0);
+        mTextPaint.setTextSize(mTextSize);
         boolean checked = a.getBoolean(R.styleable.Switcher_checked, false);
         setChecked(checked);
         a.recycle();
@@ -86,11 +111,48 @@ public class Switcher extends View implements Checkable
         return drawableState;
     }
     
+    public String getTextOn()
+    {
+        return mTextOn;
+    }
+    
+    public void setTextOn(String textOn)
+    {
+        mTextOn = textOn;
+        requestLayout();
+    }
+    
+    public String getTextOff()
+    {
+        return mTextOff;
+    }
+    
+    public void setTextOff(String textOff)
+    {
+        mTextOff = textOff;
+        requestLayout();
+    }
+    
+    public void setThumb(Drawable thumb)
+    {
+        mThumb = thumb;
+        requestLayout();
+    }
+    
+    public void setTextColor(ColorStateList textColor)
+    {
+        mTextColor = textColor;
+    }
+    
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
     {
         int width = 0;
         int height = 0;
+        
+        //TODO calculate text size + padding size
+        //        int textOnWidth = mTextOn == null ? 0 : (int)mTextPaint.measureText(mTextOn);
+        //        int textOffWidth = mTextOff == null ? 0 : (int)mTextPaint.measureText(mTextOff);
         
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
@@ -98,28 +160,33 @@ public class Switcher extends View implements Checkable
         Drawable background = getBackground();
         Drawable[] drawables = new Drawable[] {background, mThumb};
         
-        if (widthMode == MeasureSpec.UNSPECIFIED)
-        {
-            width = getMaxSize(drawables, true);
-            //TODO calculate text size
-        }
-        else
+        if (widthMode == MeasureSpec.EXACTLY)
         {
             width = MeasureSpec.getSize(widthMeasureSpec);
         }
-        
-        if (heightMode == MeasureSpec.UNSPECIFIED)
+        else
         {
-            height = getMaxSize(drawables, false);
+            width = getMaxSize(drawables, true);
+        }
+        
+        if (heightMode == MeasureSpec.EXACTLY)
+        {
+            height = MeasureSpec.getSize(heightMeasureSpec);
         }
         else
         {
-            height = MeasureSpec.getSize(heightMeasureSpec);
+            height = getMaxSize(drawables, false);
         }
         
         setMeasuredDimension(width, height);
         
         getDrawingRect(mDrawingRect);
+        //        mThumbRect.set(src)
+        
+        if (isChecked())
+        {
+            // mThumbOffset = max;
+        }
     }
     
     /**
@@ -148,15 +215,57 @@ public class Switcher extends View implements Checkable
     @Override
     public boolean onTouchEvent(MotionEvent event)
     {
+        switch (event.getAction())
+        {
+            case MotionEvent.ACTION_DOWN:
+                int x = (int)event.getX();
+                int y = (int)event.getY();
+                if (mThumb != null && mThumb.getBounds().contains(x, y))
+                {
+                    mFlag |= FLAG_THUMB_PRESSED;
+                }
+                setPressed(true);
+                
+                break;
+            
+            case MotionEvent.ACTION_UP:
+                mFlag &= ~FLAG_THUMB_PRESSED;
+                break;
+            
+            case MotionEvent.ACTION_MOVE:
+                break;
+        }
         //TODO 屏蔽
         return super.onTouchEvent(event);
     }
     
     @Override
-    protected void onDraw(Canvas canvas)
+    public void draw(Canvas canvas)
     {
-        super.onDraw(canvas);
+        Drawable background = getBackground();
+        if (background != null)
+        {
+            background.setBounds(mDrawingRect);
+            background.draw(canvas);
+        }
         
+        if (mThumb != null)
+        {
+            mThumb.setBounds(0, 0, mThumb.getIntrinsicWidth(), mThumb.getIntrinsicHeight());
+            mThumb.draw(canvas);
+        }
+        
+        if (mTextColor != null)
+            mTextPaint.setColor(mTextColor.getColorForState(getDrawableState(), 0));
+        float textTop = (float)(mTextSize * 0.375);
+        if (mTextOn != null && !"".equals(mTextOn))
+        {
+            canvas.drawText(mTextOn, mTextOnOffset, textTop, mTextPaint);
+        }
+        if (mTextOff != null && !"".equals(mTextOff))
+        {
+            canvas.drawText(mTextOff, mTextOffOffset, textTop, mTextPaint);
+        }
     }
     
     @Override
@@ -166,29 +275,56 @@ public class Switcher extends View implements Checkable
         return super.performClick();
     }
     
-    private void setChecked(boolean checked, boolean fromUser)
+    @Override
+    protected void drawableStateChanged()
     {
-        int[] state = {};
-        if (checked)
+        super.drawableStateChanged();
+        
+        int[] myDrawableState = getDrawableState();
+        
+        if (mThumb != null && mThumb.isStateful() && (mFlag | FLAG_THUMB_PRESSED) == FLAG_THUMB_PRESSED)
         {
-            state = new int[] {android.R.attr.state_checked};
+            mThumb.setState(myDrawableState);
+        }
+        
+        long duration = System.currentTimeMillis() - mPressedTime;
+        if (isPressed())
+        {
+            invalidate();
+            mPressedTime = System.currentTimeMillis();
         }
         else
         {
-            //            state = new int[]{android.R.attr.state_}
+            postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
         }
+    }
+    
+    private void setChecked(boolean checked, boolean fromUser)
+    {
+        if (mChecked == checked)
+            return;
+        
+        mChecked = checked;
+        refreshDrawableState();
+        
+        OnCheckedChangeListener l = mOnCheckedChangeListener;
+        if (l != null)
+        {
+            l.onCheckedChanged(this, checked, fromUser);
+        }
+        //TODO setChecked
     }
     
     @Override
     public void setChecked(boolean checked)
     {
-        
+        setChecked(checked, false);
     }
     
     @Override
     public boolean isChecked()
     {
-        return false;
+        return mChecked;
     }
     
     @Override
@@ -199,6 +335,6 @@ public class Switcher extends View implements Checkable
     
     public static interface OnCheckedChangeListener
     {
-        void onCheckedChanged(SwitcherOld switcher, boolean isChecked);
+        void onCheckedChanged(Switcher switcher, boolean isChecked, boolean fromUser);
     }
 }
