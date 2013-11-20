@@ -23,7 +23,7 @@
         <attr name="text" format="string" />
         <attr name="textSize" format="dimension" />
         <attr name="textColor" format="reference|color" />
-        <attr name="angle" format="float" />
+        <attr name="angle" format="dimension" />
     </declare-styleable>
     <declare-styleable name="Switcher">
         <attr name="checked" format="boolean" />
@@ -32,6 +32,7 @@
         <attr name="textOff" format="string" />
         <attr name="textSize" />
         <attr name="textColor" />
+        <attr name="textAppearance" format="reference"/>
     </declare-styleable>
 
 </resources>

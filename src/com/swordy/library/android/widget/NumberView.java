@@ -42,7 +42,7 @@ public class NumberView extends View
     
     private Drawable mTextColor;
     
-    private float mAngle;
+    private int mAngle;
     
     private long mPressedTime = System.currentTimeMillis();
     
@@ -78,7 +78,7 @@ public class NumberView extends View
         if (attrs == null)
         {
             mTextSize = 70;
-            mAngle = 0f;
+            mAngle = 0;
         }
         else
         {

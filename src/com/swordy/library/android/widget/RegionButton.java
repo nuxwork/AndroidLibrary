@@ -202,8 +202,6 @@ public class RegionButton extends View
         }
         
         setMeasuredDimension(width, height);
-        
-        getDrawingRect(mDrawingRect);
     }
     
     /**
@@ -234,6 +232,7 @@ public class RegionButton extends View
     {
         super.onLayout(changed, left, top, right, bottom);
         
+        getDrawingRect(mDrawingRect);
         Bitmap bmp = mRegionMapBitmap;
         if (bmp != null)
         {
