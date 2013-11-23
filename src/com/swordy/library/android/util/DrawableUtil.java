@@ -43,8 +43,21 @@ public class DrawableUtil
         Bitmap bmpPressed = BitmapFactory.decodeResource(res, pressedId, opts);
         
         StateListDrawable drawable = new StateListDrawable();
-        drawable.addState(new int[] {android.R.attr.state_pressed}, new BitmapDrawable(res, bmpNormal));
-        drawable.addState(new int[] {}, new BitmapDrawable(res, bmpPressed));
+        drawable.addState(new int[] {android.R.attr.state_pressed}, new BitmapDrawable(res, bmpPressed));
+        drawable.addState(new int[] {}, new BitmapDrawable(res, bmpNormal));
+        return drawable;
+    }
+    public static Drawable getDrawable(Resources res, int normalId, int pressedId, int checkedId)
+    {
+        Options opts = getOptimizeOptions(res);
+        Bitmap bmpNormal = BitmapFactory.decodeResource(res, normalId, opts);
+        Bitmap bmpPressed = BitmapFactory.decodeResource(res, pressedId, opts);
+        Bitmap bmpChecked = BitmapFactory.decodeResource(res, checkedId, opts);
+        
+        StateListDrawable drawable = new StateListDrawable();
+        drawable.addState(new int[] {android.R.attr.state_pressed}, new BitmapDrawable(res, bmpPressed));
+        drawable.addState(new int[] {android.R.attr.state_checked}, new BitmapDrawable(res, bmpChecked));
+        drawable.addState(new int[] {}, new BitmapDrawable(res, bmpNormal));
         return drawable;
     }
     

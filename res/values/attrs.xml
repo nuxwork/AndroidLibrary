@@ -32,7 +32,10 @@
         <attr name="textOff" format="string" />
         <attr name="textSize" />
         <attr name="textColor" />
-        <attr name="textAppearance" format="reference"/>
+        <attr name="textAppearance" format="reference" />
+    </declare-styleable>
+    <declare-styleable name="CheckButton">
+        <attr name="checked" />
     </declare-styleable>
 
 </resources>
