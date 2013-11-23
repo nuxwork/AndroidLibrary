@@ -37,5 +37,8 @@
     <declare-styleable name="CheckButton">
         <attr name="checked" />
     </declare-styleable>
+    <declare-styleable name="CheckText">
+        <attr name="checked" />
+    </declare-styleable>
 
 </resources>
