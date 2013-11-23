@@ -12,7 +12,7 @@ import android.util.DisplayMetrics;
 
 public class DrawableUtil
 {
-    public static final String TAG = DrawableUtil.class.getSimpleName();
+    public static final String TAG = "AndroidLibrary.DrawableUtil";
     
     private static Options mOpts;
     

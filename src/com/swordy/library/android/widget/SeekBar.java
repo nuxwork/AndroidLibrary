@@ -245,10 +245,13 @@ public class SeekBar extends View
         }
         
         long duration = System.currentTimeMillis() - mPressedTime;
-        if (isPressed()){
+        if (isPressed())
+        {
             invalidate();
             mPressedTime = System.currentTimeMillis();
-        }else{
+        }
+        else
+        {
             postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
         }
     }
@@ -363,25 +366,6 @@ public class SeekBar extends View
         measureDrawables(width, height);
         
         setMeasuredDimension(width, height);
-        
-        getDrawingRect(mContentRect);
-        mContentRect.left += getPaddingLeft();
-        mContentRect.top += getPaddingTop();
-        mContentRect.right -= getPaddingRight();
-        mContentRect.bottom -= getPaddingBottom();
-        
-        mProgressRect.set(mContentRect);
-        if (mOrientation == VERTICAL)
-        {
-            mProgressRect.top += mThumbOffset;
-            mProgressRect.bottom -= mThumbOffset;
-        }
-        else
-        {
-            mProgressRect.left += mThumbOffset;
-            mProgressRect.right -= mThumbOffset;
-        }
-        
     }
     
     private void measureDrawables(int width, int height)
@@ -415,6 +399,23 @@ public class SeekBar extends View
     {
         Log.v(TAG, "onLayout");
         super.onLayout(changed, left, top, right, bottom);
+        getDrawingRect(mContentRect);
+        mContentRect.left += getPaddingLeft();
+        mContentRect.top += getPaddingTop();
+        mContentRect.right -= getPaddingRight();
+        mContentRect.bottom -= getPaddingBottom();
+        
+        mProgressRect.set(mContentRect);
+        if (mOrientation == VERTICAL)
+        {
+            mProgressRect.top += mThumbOffset;
+            mProgressRect.bottom -= mThumbOffset;
+        }
+        else
+        {
+            mProgressRect.left += mThumbOffset;
+            mProgressRect.right -= mThumbOffset;
+        }
     }
     
     @Override

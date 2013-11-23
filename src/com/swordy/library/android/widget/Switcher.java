@@ -180,7 +180,6 @@ public class Switcher extends View implements Checkable
         
         setMeasuredDimension(width, height);
         
-        getDrawingRect(mDrawingRect);
         //        mThumbRect.set(src)
         
         if (isChecked())
@@ -189,6 +188,15 @@ public class Switcher extends View implements Checkable
         }
     }
     
+    
+    
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom)
+    {
+        super.onLayout(changed, left, top, right, bottom);
+        getDrawingRect(mDrawingRect);
+    }
+
     /**
      * @param tag true is pointer to width, and false is pointer to height
      */
