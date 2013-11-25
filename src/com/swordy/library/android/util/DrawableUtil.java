@@ -9,6 +9,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
 import android.util.DisplayMetrics;
+import android.view.View;
 
 public class DrawableUtil
 {
@@ -32,27 +33,44 @@ public class DrawableUtil
     
     public static Drawable getDrawable(Resources res, int resId)
     {
-        Bitmap bitmap = BitmapFactory.decodeResource(res, resId, getOptimizeOptions(res));
+        Bitmap bitmap = null;
+        
+        if (resId != View.NO_ID)
+            bitmap = BitmapFactory.decodeResource(res, resId, getOptimizeOptions(res));
+        
         return new BitmapDrawable(res, bitmap);
     }
     
     public static Drawable getDrawable(Resources res, int normalId, int pressedId)
     {
         Options opts = getOptimizeOptions(res);
-        Bitmap bmpNormal = BitmapFactory.decodeResource(res, normalId, opts);
-        Bitmap bmpPressed = BitmapFactory.decodeResource(res, pressedId, opts);
+        Bitmap bmpNormal = null;
+        Bitmap bmpPressed = null;
+        
+        if (normalId != View.NO_ID)
+            bmpNormal = BitmapFactory.decodeResource(res, normalId, opts);
+        if (pressedId != View.NO_ID)
+            bmpPressed = BitmapFactory.decodeResource(res, pressedId, opts);
         
         StateListDrawable drawable = new StateListDrawable();
         drawable.addState(new int[] {android.R.attr.state_pressed}, new BitmapDrawable(res, bmpPressed));
         drawable.addState(new int[] {}, new BitmapDrawable(res, bmpNormal));
         return drawable;
     }
+    
     public static Drawable getDrawable(Resources res, int normalId, int pressedId, int checkedId)
     {
         Options opts = getOptimizeOptions(res);
-        Bitmap bmpNormal = BitmapFactory.decodeResource(res, normalId, opts);
-        Bitmap bmpPressed = BitmapFactory.decodeResource(res, pressedId, opts);
-        Bitmap bmpChecked = BitmapFactory.decodeResource(res, checkedId, opts);
+        Bitmap bmpNormal = null;
+        Bitmap bmpPressed = null;
+        Bitmap bmpChecked = null;
+        
+        if (normalId != View.NO_ID)
+            BitmapFactory.decodeResource(res, normalId, opts);
+        if (pressedId != View.NO_ID)
+            BitmapFactory.decodeResource(res, pressedId, opts);
+        if (checkedId != View.NO_ID)
+            BitmapFactory.decodeResource(res, checkedId, opts);
         
         StateListDrawable drawable = new StateListDrawable();
         drawable.addState(new int[] {android.R.attr.state_pressed}, new BitmapDrawable(res, bmpPressed));
