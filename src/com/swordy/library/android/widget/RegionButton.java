@@ -17,6 +17,7 @@ import android.os.Message;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -400,10 +401,19 @@ public class RegionButton extends View
                 int id = getColorFromBitmap(mRegionMapBitmap, x, y);
                 if (id != mPressedRegionId)
                 {
+                    id = mPressedRegionId;
                     removeRegionLongPressCallback();
                     mPressedRegionId = NO_REGION_ID;
                     mFlags &= ~FLAG_REGION_PRESSED;
                     setPressed(false);
+                    if (isEnabled())
+                    {
+                        event.setAction(KeyEvent.ACTION_UP);
+                        if (!perfermRegionTouch(id, event) && isRegionPressed())
+                        {
+                            perfermRegionClick(id);
+                        }
+                    }
                 }
                 else if (perfermRegionTouch(mPressedRegionId, event))
                     ;
