@@ -4,6 +4,18 @@ import com.swordy.library.android.BuildConfig;
 
 public final class Log
 {
+    public static final int ASSERT = android.util.Log.ASSERT;
+    
+    public static final int DEBUG = android.util.Log.DEBUG;
+    
+    public static final int ERROR = android.util.Log.ERROR;
+    
+    public static final int INFO = android.util.Log.INFO;
+    
+    public static final int VERBOSE = android.util.Log.VERBOSE;
+    
+    public static final int WARN = android.util.Log.WARN;
+    
     public static void d(String tag, String msg)
     {
         if (BuildConfig.DEBUG)
@@ -88,4 +100,10 @@ public final class Log
             android.util.Log.wtf(tag, tr);
     }
     
+    public static void currentThreadInfo(int priority, String tag)
+    {
+        Thread thr = Thread.currentThread();
+        android.util.Log.println(priority, tag, "current thread id: " + thr.getId() + ", name: " + thr.getName()
+            + ", priority: " + thr.getPriority() + ", state: " + thr.getState());
+    }
 }
