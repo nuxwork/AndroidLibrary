@@ -16,6 +16,8 @@ public final class Log
     
     public static final int WARN = android.util.Log.WARN;
     
+    private static long mPreTimeMillis = System.currentTimeMillis();
+    
     public static void d(String tag, String msg)
     {
         if (BuildConfig.DEBUG)
@@ -100,10 +102,20 @@ public final class Log
             android.util.Log.wtf(tag, tr);
     }
     
-    public static void currentThreadInfo(int priority, String tag)
+    public static void currentThreadInfo(String tag)
     {
-        Thread thr = Thread.currentThread();
-        android.util.Log.println(priority, tag, "current thread id: " + thr.getId() + ", name: " + thr.getName()
-            + ", priority: " + thr.getPriority() + ", state: " + thr.getState());
+        if (BuildConfig.DEBUG)
+        {
+            Thread thr = Thread.currentThread();
+            Log.v(tag, "Thread[id:" + thr.getId() + ",name:" + thr.getName() + "priority:" + thr.getPriority()
+                + "group:" + thr.getThreadGroup().getName() + "]");
+        }
+    }
+    
+    public static void currentTimeMillis(String tag, String msg)
+    {
+        long current = System.currentTimeMillis();
+        Log.v(tag, msg + "timeMillis[current: " + current + " , duration: " + (mPreTimeMillis - current) + "]");
+        mPreTimeMillis = current;
     }
 }
