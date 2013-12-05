@@ -1,14 +1,17 @@
 package com.swordy.library.android.view;
 
+import com.swordy.library.android.util.AndroidUnit;
+
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 
-public class FlingDetecer
+public class FlingDetector
 {
-    private static final String TAG = "AndroidLibrary.FlingDetecer";
+    private static final String TAG = "AndroidLibrary.FlingDetector";
     
     public static final int SINGLE_TAP = 0;
     
@@ -21,6 +24,8 @@ public class FlingDetecer
     public static final int FLING_LEFT = 4;
     
     public static final int FLING_RIGHT = 5;
+    
+    private int GESTURES_CURSOR_DISTANCE = 80;
     
     public interface OnFlingListener
     {
@@ -41,9 +46,10 @@ public class FlingDetecer
     
     private int mMaximumFlingVelocity;
     
-    public FlingDetecer(Context context, OnFlingListener listener)
+    public FlingDetector(Context context, OnFlingListener listener)
     {
         mFlingListener = listener;
+        AndroidUnit.init(context);
         init(context, true);
     }
     
@@ -53,7 +59,6 @@ public class FlingDetecer
         {
             throw new NullPointerException("OnFlingListener must not be null");
         }
-        // Fallback to support pre-donuts releases
         int touchSlop, doubleTapSlop;
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         touchSlop = configuration.getScaledTouchSlop();
@@ -64,11 +69,11 @@ public class FlingDetecer
         mDoubleTapSlopSquare = doubleTapSlop * doubleTapSlop;
     }
     
-    private int GESTURES_CURSOR_DISTANCE = 80;
-    
-    public void onFlingChanged(int derection)
+    public void onFlingChanged(int direction)
     {
-        
+        Log.v(TAG, "onFling: " + direction);
+        if (mFlingListener != null)
+            mFlingListener.onFling(direction);
     }
     
     public void detect(MotionEvent event)
@@ -87,11 +92,12 @@ public class FlingDetecer
             case MotionEvent.ACTION_MOVE:
                 final float scrollX = mLastMotionX - x;
                 final float scrollY = mLastMotionY - y;
-                final float distanceX = Math.abs(scrollX);
-                final float distanceY = Math.abs(scrollY);
+                final float distanceX = AndroidUnit.px2dip(Math.abs(scrollX));
+                final float distanceY = AndroidUnit.px2dip(Math.abs(scrollY));
                 
                 if (distanceX >= GESTURES_CURSOR_DISTANCE || distanceY >= GESTURES_CURSOR_DISTANCE)
                 {
+                    Log.v(TAG, "distance px: " +scrollX + " dp: " + distanceX);
                     mLastMotionX = x;
                     mLastMotionY = y;
                     
