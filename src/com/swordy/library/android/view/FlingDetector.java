@@ -1,38 +1,46 @@
 package com.swordy.library.android.view;
 
-import com.swordy.library.android.util.AndroidUnit;
-
 import android.content.Context;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
+
+import com.swordy.library.android.util.AndroidUnit;
 
 public class FlingDetector
 {
     private static final String TAG = "AndroidLibrary.FlingDetector";
     
-    public static final int SINGLE_TAP = 0;
-    
-    public static final int DOUBLE_TAP = 1;
-    
-    public static final int FLING_UP = 2;
-    
-    public static final int FLING_DOWN = 3;
-    
-    public static final int FLING_LEFT = 4;
-    
-    public static final int FLING_RIGHT = 5;
-    
-    private int GESTURES_CURSOR_DISTANCE = 80;
-    
     public interface OnFlingListener
     {
+        void onShowPress(float x, float y);
+        
+        void onSingleTap(float x, float y);
+        
         void onFling(int direction/*, float velocity*/);
     }
     
-    private OnFlingListener mFlingListener;
+    public static final int SHOW_PRESS = 0;
+    
+    public static final int SINGLE_TAP = 1;
+    
+    public static final int DOUBLE_TAP = 2;
+    
+    public static final int DIRECTION_UP = 3;
+    
+    public static final int DIRECTION_DOWN = 4;
+    
+    public static final int DIRECTION_LEFT = 5;
+    
+    public static final int DIRECTION_RIGHT = 6;
+    
+    private static final int SINGLE_TAP_TIMEOUT = 180;//ViewConfiguration.getTapTimeout();
+    
+    private static final int MSG_SINGLE_TAP = 0;
+    
+    private static final int MSG_DOUBLE_TAP = 1;
+    
+    private int GESTURES_CURSOR_DISTANCE = 80;
     
     private float mLastMotionY;
     
@@ -45,6 +53,12 @@ public class FlingDetector
     private int mMinimumFlingVelocity;
     
     private int mMaximumFlingVelocity;
+    
+    private OnFlingListener mFlingListener;
+    
+    private boolean mHasFling;
+    
+    private long mLastPressTime = System.currentTimeMillis();
     
     public FlingDetector(Context context, OnFlingListener listener)
     {
@@ -69,9 +83,28 @@ public class FlingDetector
         mDoubleTapSlopSquare = doubleTapSlop * doubleTapSlop;
     }
     
-    public void onFlingChanged(int direction)
+    public void onShowPress(float x, float y)
+    {
+        Log.v(TAG, "onShowPress x: " + x + " ,y: " + y);
+        mHasFling = false;
+        if (mFlingListener != null)
+            mFlingListener.onShowPress(x, y);
+    }
+    
+    public void onSingleTap(float x, float y)
+    {
+        Log.v(TAG, "onSingleTap x: " + x + " ,y: " + y);
+        mHasFling = false;
+        if (mFlingListener != null)
+        {
+            mFlingListener.onSingleTap(x, y);
+        }
+    }
+    
+    public void onFling(int direction)
     {
         Log.v(TAG, "onFling: " + direction);
+        mHasFling = true;
         if (mFlingListener != null)
             mFlingListener.onFling(direction);
     }
@@ -85,9 +118,10 @@ public class FlingDetector
         switch (action)
         {
             case MotionEvent.ACTION_DOWN:
+                mLastPressTime = System.currentTimeMillis();
                 mLastMotionX = x;
                 mLastMotionY = y;
-                
+                onShowPress(x, y);
                 break;
             case MotionEvent.ACTION_MOVE:
                 final float scrollX = mLastMotionX - x;
@@ -97,7 +131,7 @@ public class FlingDetector
                 
                 if (distanceX >= GESTURES_CURSOR_DISTANCE || distanceY >= GESTURES_CURSOR_DISTANCE)
                 {
-                    Log.v(TAG, "distance px: " +scrollX + " dp: " + distanceX);
+                    Log.v(TAG, "distance px: " + scrollX + " dp: " + distanceX);
                     mLastMotionX = x;
                     mLastMotionY = y;
                     
@@ -105,49 +139,49 @@ public class FlingDetector
                     {
                         if (scrollY < 0)
                         {
-                            onFlingChanged(FLING_UP);
+                            onFling(DIRECTION_UP);
                         }
                         else
                         {
-                            onFlingChanged(FLING_DOWN);
+                            onFling(DIRECTION_DOWN);
                         }
                     }
                     else
                     {
                         if (scrollX < 0)
                         {
-                            onFlingChanged(FLING_LEFT);
+                            onFling(DIRECTION_LEFT);
                         }
                         else
                         {
-                            onFlingChanged(FLING_RIGHT);
+                            onFling(DIRECTION_RIGHT);
                         }
                     }
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                
+                long current = System.currentTimeMillis();
+                if (!mHasFling && current - mLastPressTime < SINGLE_TAP_TIMEOUT)
+                {
+                    onSingleTap(x, y);
+                }
                 break;
         }
         
     }
     
-    private Handler mHandler = new Handler()
-    {
-        
-        @Override
-        public void handleMessage(Message msg)
+    /*    private Handler mHandler = new Handler()
         {
-            switch (msg.what)
+            
+            @Override
+            public void handleMessage(Message msg)
             {
-                case 0:
-                    
-                    break;
-                
-                default:
-                    break;
+                switch (msg.what)
+                {
+                    default:
+                        break;
+                }
             }
-        }
-        
-    };
+            
+        };*/
 }
