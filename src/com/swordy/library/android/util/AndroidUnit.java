@@ -2,7 +2,6 @@ package com.swordy.library.android.util;
 
 import android.content.Context;
 
-
 public class AndroidUnit
 {
     private static final String TAG = "AndroidLibrary.AndroidUnit";
