@@ -14,7 +14,6 @@ import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
 
 import com.swordy.library.android.R;
 
@@ -103,18 +102,23 @@ public class NumberView extends View
     @Override
     public boolean onTouchEvent(MotionEvent event)
     {
+        if (!isEnabled())
+            return false;
+        
         switch (event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
                 setPressed(true);
                 invalidate();
-                mPressedTime = System.currentTimeMillis();
+//                mPressedTime = System.currentTimeMillis();
                 return true;
             case MotionEvent.ACTION_UP:
                 boolean pressed = isPressed();
                 setPressed(false);
-                long duration = System.currentTimeMillis() - mPressedTime;
-                postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
+                // will flicker when animating
+//                long duration = System.currentTimeMillis() - mPressedTime;
+//                postInvalidateDelayed(ViewConfiguration.getPressedStateDuration() - duration);
+                invalidate();
                 if (pressed)
                 {
                     performClick();
