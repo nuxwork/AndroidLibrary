@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
 
 import com.swordy.library.android.util.AndroidUnit;
 
@@ -14,24 +15,24 @@ public class FlingDetector
     
     public interface OnFlingListener
     {
-        void onDown(float x, float y);
+        void onDown(View v, float x, float y);
         
-        void onUp(float x, float y);
+        void onUp(View v, float x, float y);
         
-        void onPress(float x, float y);
+        void onPress(View v, float x, float y);
         
-        void onMove(float x, float y);
+        void onMove(View v, float x, float y);
         
-        void onClick(float x, float y);
+        void onClick(View v, float x, float y);
         
-        void onFling(int direction);
+        void onFling(View v, int direction);
         
-        void onSerialFling(int direction);
+        void onSerialFling(View v, int direction);
     }
     
     private static final int CAN_PRESS_TIMEOUT = 120;
     
-    private static final int PRESSED_STATE_DURATION = 125;
+    private static final int PRESSED_STATE_DURATION = 40;
     
     private static final int PRESS_SAFE_MOVE_RANGE = 15/*dp*/;
     
@@ -87,7 +88,7 @@ public class FlingDetector
         mPressStateMoveRange = AndroidUnit.px2dip(PRESS_SAFE_MOVE_RANGE);
     }
     
-    public boolean detect(MotionEvent event)
+    public boolean detect(View v, MotionEvent event)
     {
         final int action = event.getAction();
         final float x = event.getX();
@@ -102,8 +103,12 @@ public class FlingDetector
                 mFlags |= FLAG_CAN_PRESS;
                 mFlags &= ~FLAG_PRESSED;
                 mFlags &= ~FLAG_MOVED;
-                onDown(x, y);
-                mHandler.sendEmptyMessageDelayed(MSG_PRESS, CAN_PRESS_TIMEOUT);
+                onDown(v, x, y);
+                
+                Message msg = new Message();
+                msg.what = MSG_PRESS;
+                msg.obj = v;
+                mHandler.sendMessageDelayed(msg, CAN_PRESS_TIMEOUT);
                 return true;
             }
             case MotionEvent.ACTION_MOVE:
@@ -127,7 +132,7 @@ public class FlingDetector
                         mFirstMotionY = y;
                     }
                     
-                    onMove(x, y);
+                    onMove(v, x, y);
                     mFlags |= FLAG_MOVED;
                 }
                 
@@ -137,7 +142,7 @@ public class FlingDetector
                     mLastMotionY = y;
                     
                     int direction = getDirection(scrollX, scrollY, distanceX, distanceY);
-                    onSerialFling(direction);
+                    onSerialFling(v, direction);
                 }
                 return true;
             }
@@ -150,11 +155,11 @@ public class FlingDetector
                     // can press but not pressed
                     if ((mFlags & FLAG_PRESSED) != FLAG_PRESSED)
                     {
-                        onPress(x, y);
+                        onPress(v, x, y);
                     }
                 }
                 
-                onUp(x, y);
+                onUp(v, x, y);
                 
                 if ((mFlags & FLAG_MOVED) == FLAG_MOVED)
                 {
@@ -163,12 +168,12 @@ public class FlingDetector
                     final float distanceX = AndroidUnit.px2dip(Math.abs(scrollX));
                     final float distanceY = AndroidUnit.px2dip(Math.abs(scrollY));
                     int direction = getDirection(scrollX, scrollY, distanceX, distanceY);
-                    onFling(direction);
+                    onFling(v, direction);
                 }
                 
                 if ((mFlags & FLAG_PRESSED) == FLAG_PRESSED)
                 {
-                    onClick(x, y);
+                    onClick(v, x, y);
                 }
                 return true;
             }
@@ -215,10 +220,10 @@ public class FlingDetector
             switch (msg.what)
             {
                 case MSG_PRESS:
-                    onPress(mLastMotionX, mLastMotionY);
+                    onPress((View)msg.obj, mLastMotionX, mLastMotionY);
                     break;
                 case MSG_CLICK:
-                    onClick(mLastMotionX, mLastMotionY);
+                    onClick((View)msg.obj, mLastMotionX, mLastMotionY);
                     break;
                 default:
                     break;
@@ -227,60 +232,63 @@ public class FlingDetector
         
     };
     
-    void onDown(float x, float y)
+    void onDown(View v, float x, float y)
     {
         Log.v(TAG, "~~~~~~~~~~~begin~~~~~~~~~~~~onDown");
         if (mFlingListener != null)
         {
-            mFlingListener.onDown(x, y);
+            mFlingListener.onDown(v, x, y);
         }
     }
     
-    void onUp(float x, float y)
+    void onUp(View v, float x, float y)
     {
         Log.v(TAG, "~~~~~~~~~~~~~end~~~~~~~~~~~~~~onUp");
         if (mFlingListener != null)
         {
-            mFlingListener.onUp(x, y);
+            mFlingListener.onUp(v, x, y);
         }
     }
     
     private long mPressedTime;
     
-    void onPress(float x, float y)
+    void onPress(View v, float x, float y)
     {
         Log.v(TAG, "  $$$$$$   onPress");
         mPressedTime = System.currentTimeMillis();
         mFlags |= FLAG_PRESSED;
         if (mFlingListener != null)
         {
-            mFlingListener.onPress(x, y);
+            mFlingListener.onPress(v, x, y);
         }
     }
     
-    void onMove(float x, float y)
+    void onMove(View v, float x, float y)
     {
         Log.v(TAG, "???????  onMove");
         if (mFlingListener != null)
         {
-            mFlingListener.onMove(x, y);
+            mFlingListener.onMove(v, x, y);
         }
     }
     
-    void onClick(float x, float y)
+    void onClick(View v, float x, float y)
     {
         long now = System.currentTimeMillis();
         long diff = now - mPressedTime;
         if (diff < PRESSED_STATE_DURATION)
         {
-            mHandler.sendEmptyMessageDelayed(MSG_CLICK, PRESSED_STATE_DURATION - diff);
+            Message msg = new Message();
+            msg.what = MSG_CLICK;
+            msg.obj = v;
+            mHandler.sendMessageDelayed(msg, PRESSED_STATE_DURATION - diff);
             return;
         }
         
         Log.v(TAG, "********  onClick");
         if (mFlingListener != null)
         {
-            mFlingListener.onClick(x, y);
+            mFlingListener.onClick(v, x, y);
         }
     }
     
@@ -293,12 +301,12 @@ public class FlingDetector
      * @see {@link #DIRECTION_LEFT}
      * @see {@link #DIRECTION_RIGHT}
      */
-    void onSerialFling(int direction)
+    void onSerialFling(View v, int direction)
     {
         Log.v(TAG, "------  onSerialFling");
         if (mFlingListener != null)
         {
-            mFlingListener.onSerialFling(direction);
+            mFlingListener.onSerialFling(v, direction);
         }
     }
     
@@ -311,12 +319,12 @@ public class FlingDetector
      * @see {@link #DIRECTION_LEFT}
      * @see {@link #DIRECTION_RIGHT}
      */
-    void onFling(int direction)
+    void onFling(View v, int direction)
     {
         Log.v(TAG, "+++ onFling");
         if (mFlingListener != null)
         {
-            mFlingListener.onFling(direction);
+            mFlingListener.onFling(v, direction);
         }
     }
     
@@ -324,43 +332,43 @@ public class FlingDetector
     {
         
         @Override
-        public void onDown(float x, float y)
+        public void onDown(View v, float x, float y)
         {
             return;
         }
         
         @Override
-        public void onPress(float x, float y)
+        public void onPress(View v, float x, float y)
         {
             return;
         }
         
         @Override
-        public void onMove(float x, float y)
+        public void onMove(View v, float x, float y)
         {
             return;
         }
         
         @Override
-        public void onClick(float x, float y)
+        public void onClick(View v, float x, float y)
         {
             return;
         }
         
         @Override
-        public void onFling(int direction)
+        public void onFling(View v, int direction)
         {
             return;
         }
         
         @Override
-        public void onSerialFling(int direction)
+        public void onSerialFling(View v, int direction)
         {
             return;
         }
         
         @Override
-        public void onUp(float x, float y)
+        public void onUp(View v, float x, float y)
         {
             return;
         }
