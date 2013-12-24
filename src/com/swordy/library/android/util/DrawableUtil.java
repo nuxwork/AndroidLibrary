@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory.Options;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LevelListDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -18,7 +19,7 @@ import android.view.View;
 
 public class DrawableUtil
 {
-    public static final String TAG = "RemoteClient.DrawableUtil";
+    public static final String TAG = "AndroidLibrary.DrawableUtil";
     
     private static HashMap<Integer, ArrayList<Bitmap>> mBitmapTracker = new HashMap<Integer, ArrayList<Bitmap>>();
     
@@ -82,6 +83,19 @@ public class DrawableUtil
         drawable.addState(new int[] {android.R.attr.state_checked}, getDrawable(res, checkedId, opts));
         drawable.addState(new int[] {}, getDrawable(res, normalId, opts));
         return drawable;
+    }
+    
+    public static LevelListDrawable getLevelListDrawable(Resources res, int... resId)
+    {
+        if (resId == null)
+            return null;
+        
+        LevelListDrawable d = new LevelListDrawable();
+        for (int id : resId)
+        {
+            d.addLevel(id, id, getDrawable(res, id));
+        }
+        return d;
     }
     
     public static AnimationDrawable getAnimationDrawable(Resources res, int[] resIds, int[] durations, boolean oneShot)
