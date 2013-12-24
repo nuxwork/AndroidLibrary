@@ -9,42 +9,87 @@ import android.view.View;
 
 import com.swordy.library.android.util.AndroidUnit;
 
+/**
+ * 滑动检测器，用于分离Touch事件
+ * @author  yWX191142
+ */
 public class FlingDetector
 {
     private static final String TAG = "AndroidLibrary.FlingDetector";
     
     public interface OnFlingListener
     {
+        /**
+         * default motion down event
+         * @see MotionEvent.ACTION_DOWN
+         */
         void onDown(View v, float x, float y);
         
+        /**
+         * default motion up event
+         * @see MotionEvent.ACTION_UP
+         */
         void onUp(View v, float x, float y);
         
+        /**
+         * virtual motion down event
+         * @see FlingDetector.{@link #DOWN_TO_PRESS_DURATION}
+         */
         void onPress(View v, float x, float y);
         
+        /**
+         * motion move event
+         * @see FlingDetector.{@link #PRESS_SAFE_MOVE_RANGE}
+         */
         void onMove(View v, float x, float y);
         
+        /**
+         * tap event
+         */
+        void onTap(View v, float x, float y);
+        
+        /**
+         * click event
+         */
         void onClick(View v, float x, float y);
         
+        /**
+         * single fling event, one down-up event only generate one fling event
+         * @param direction use 
+         *  {@link #DIRECTION_UNKNOW},
+         *  {@link #DIRECTION_UP},
+         *  {@link #DIRECTION_DOWN},
+         *  {@link #DIRECTION_LEFT},
+         *  {@link #DIRECTION_RIGHT},
+         */
         void onFling(View v, int direction);
         
+        /**
+         * Multiple fling event, one down-up event only generate multiple fling event
+         * @param direction use 
+         *  {@link #DIRECTION_UNKNOW},
+         *  {@link #DIRECTION_UP},
+         *  {@link #DIRECTION_DOWN},
+         *  {@link #DIRECTION_LEFT},
+         *  {@link #DIRECTION_RIGHT},
+         *  @see {@link #setSerialFlingDistance()}
+         */
         void onSerialFling(View v, int direction);
     }
     
-    private static final int CAN_PRESS_TIMEOUT = 120;
+    /**
+     * duration between motion down event to virtual press event
+     */
+    private static final int DOWN_TO_PRESS_DURATION = 120/*ms*/;
     
-    private static final int PRESSED_STATE_DURATION = 40;
+    private static final int PRESSED_STATE_DURATION = 40/*ms*/;
     
-    private static final int PRESS_SAFE_MOVE_RANGE = 15/*dp*/;
+    /**
+     * safe move distance, the motion event will not generate move event if inside.
+     */
+    private static final int PRESS_SAFE_MOVE_RANGE = 10/*dp*/;
     
-    public static final int DIRECTION_UNKNOW = 0;
-    
-    public static final int DIRECTION_UP = 1;
-    
-    public static final int DIRECTION_DOWN = 2;
-    
-    public static final int DIRECTION_LEFT = 3;
-    
-    public static final int DIRECTION_RIGHT = 4;
+    private static final int MIN_FLING_DISTANCE = 80/*dp*/;
     
     private static final int MSG_PRESS = 0;
     
@@ -56,17 +101,46 @@ public class FlingDetector
     
     private static final int FLAG_PRESSED = 0x00000004;
     
+    // --------- direction begin --------------
+    public static final int DIRECTION_UNKNOW = 0;
+    
+    public static final int DIRECTION_UP = 1;
+    
+    public static final int DIRECTION_DOWN = 2;
+    
+    public static final int DIRECTION_LEFT = 3;
+    
+    public static final int DIRECTION_RIGHT = 4;
+    
+    // --------- direction begin --------------
+    
     private int mFlags = 0;
     
-    private int mSerialFlingDistance = 80;
+    private long mPressedTime;
     
-    private float mLastMotionY;
+    private int mSerialFlingDistance = 80/*px*/;
     
+    private int mMinFlingDistance;
+    
+    /**
+     *  record motion point x when last motion down.
+     */
     private float mLastMotionX;
     
-    private float mFirstMotionY;
+    /**
+     *  record motion point y when last motion down.
+     */
+    private float mLastMotionY;
     
+    /**
+     *  record motion point x when first motion down.
+     */
     private float mFirstMotionX;
+    
+    /**
+     *  record motion point y when first motion down.
+     */
+    private float mFirstMotionY;
     
     private int mPressStateMoveRange;
     
@@ -85,7 +159,10 @@ public class FlingDetector
         {
             throw new NullPointerException("OnFlingListener must not be null");
         }
-        mPressStateMoveRange = AndroidUnit.px2dip(PRESS_SAFE_MOVE_RANGE);
+        mPressStateMoveRange = AndroidUnit.dip2px(PRESS_SAFE_MOVE_RANGE);
+        mMinFlingDistance = AndroidUnit.dip2px(MIN_FLING_DISTANCE);
+        mSerialFlingDistance = AndroidUnit.dip2px(MIN_FLING_DISTANCE);
+        Log.v(TAG, "mMinFlingDistance: " + mMinFlingDistance + ", mSerialFlingDistance: " + mSerialFlingDistance);
     }
     
     public boolean detect(View v, MotionEvent event)
@@ -100,6 +177,8 @@ public class FlingDetector
             {
                 mLastMotionX = x;
                 mLastMotionY = y;
+                mFirstMotionX = x;
+                mFirstMotionY = y;
                 mFlags |= FLAG_CAN_PRESS;
                 mFlags &= ~FLAG_PRESSED;
                 mFlags &= ~FLAG_MOVED;
@@ -108,15 +187,15 @@ public class FlingDetector
                 Message msg = new Message();
                 msg.what = MSG_PRESS;
                 msg.obj = v;
-                mHandler.sendMessageDelayed(msg, CAN_PRESS_TIMEOUT);
+                mHandler.sendMessageDelayed(msg, DOWN_TO_PRESS_DURATION);
                 return true;
             }
             case MotionEvent.ACTION_MOVE:
             {
                 final float scrollX = mLastMotionX - x;
                 final float scrollY = mLastMotionY - y;
-                final float distanceX = AndroidUnit.px2dip(Math.abs(scrollX));
-                final float distanceY = AndroidUnit.px2dip(Math.abs(scrollY));
+                final float distanceX = Math.abs(scrollX);
+                final float distanceY = Math.abs(scrollY);
                 
                 if (distanceX >= mPressStateMoveRange || distanceY >= mPressStateMoveRange)
                 {
@@ -126,14 +205,8 @@ public class FlingDetector
                 
                 if ((mFlags & FLAG_CAN_PRESS) != FLAG_CAN_PRESS)
                 {
-                    if ((mFlags & FLAG_MOVED) != FLAG_MOVED)
-                    {
-                        mFirstMotionX = x;
-                        mFirstMotionY = y;
-                    }
-                    
-                    onMove(v, x, y);
                     mFlags |= FLAG_MOVED;
+                    onMove(v, x, y);
                 }
                 
                 if (distanceX >= mSerialFlingDistance || distanceY >= mSerialFlingDistance)
@@ -141,6 +214,7 @@ public class FlingDetector
                     mLastMotionX = x;
                     mLastMotionY = y;
                     
+                    Log.v(TAG, "ready to onSerialFling + distanceX: " + distanceX + " ,  distanceY:  " + distanceY);
                     int direction = getDirection(scrollX, scrollY, distanceX, distanceY);
                     onSerialFling(v, direction);
                 }
@@ -165,10 +239,19 @@ public class FlingDetector
                 {
                     final float scrollX = mFirstMotionX - x;
                     final float scrollY = mFirstMotionY - y;
-                    final float distanceX = AndroidUnit.px2dip(Math.abs(scrollX));
-                    final float distanceY = AndroidUnit.px2dip(Math.abs(scrollY));
-                    int direction = getDirection(scrollX, scrollY, distanceX, distanceY);
-                    onFling(v, direction);
+                    final float distanceX = Math.abs(scrollX);
+                    final float distanceY = Math.abs(scrollY);
+                    Log.v(TAG, "ready to fling + distanceX: " + distanceX + " ,  distanceY:  " + distanceY);
+                    if (distanceX > mMinFlingDistance || distanceY > mMinFlingDistance)
+                    {
+                        int direction = getDirection(scrollX, scrollY, distanceX, distanceY);
+                        onFling(v, direction);
+                    }
+                }
+                
+                if ((mFlags & FLAG_PRESSED) == FLAG_PRESSED && (mFlags & FLAG_MOVED) != FLAG_MOVED)
+                {
+                    onTap(v, x, y);
                 }
                 
                 if ((mFlags & FLAG_PRESSED) == FLAG_PRESSED)
@@ -211,6 +294,20 @@ public class FlingDetector
         }
     }
     
+    public int getSerialFlingDistance()
+    {
+        return mSerialFlingDistance;
+    }
+    
+    /** 
+     * set fling distance for serial fling.
+     * @param serialFlingDistance default is 80dp.
+     */
+    public void setSerialFlingDistance(int serialFlingDistance)
+    {
+        mSerialFlingDistance = serialFlingDistance;
+    }
+    
     private Handler mHandler = new Handler()
     {
         
@@ -250,8 +347,6 @@ public class FlingDetector
         }
     }
     
-    private long mPressedTime;
-    
     void onPress(View v, float x, float y)
     {
         Log.v(TAG, "  $$$$$$   onPress");
@@ -269,6 +364,15 @@ public class FlingDetector
         if (mFlingListener != null)
         {
             mFlingListener.onMove(v, x, y);
+        }
+    }
+    
+    void onTap(View v, float x, float y)
+    {
+        Log.v(TAG, "********  onTap");
+        if (mFlingListener != null)
+        {
+            mFlingListener.onTap(v, x, y);
         }
     }
     
@@ -345,6 +449,12 @@ public class FlingDetector
         
         @Override
         public void onMove(View v, float x, float y)
+        {
+            return;
+        }
+        
+        @Override
+        public void onTap(View v, float x, float y)
         {
             return;
         }
