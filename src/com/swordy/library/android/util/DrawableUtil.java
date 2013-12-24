@@ -1,5 +1,9 @@
 package com.swordy.library.android.util;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
+
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,11 +13,16 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 
 public class DrawableUtil
 {
-    public static final String TAG = "AndroidLibrary.DrawableUtil";
+    public static final String TAG = "RemoteClient.DrawableUtil";
+    
+    private static HashMap<Integer, ArrayList<Bitmap>> mBitmapTracker = new HashMap<Integer, ArrayList<Bitmap>>();
+    
+    private static int mCurrentTrackerId;
     
     private static Options mOpts;
     
@@ -41,6 +50,13 @@ public class DrawableUtil
         if (resId != View.NO_ID)
         {
             Bitmap bitmap = BitmapFactory.decodeResource(res, resId, opts);
+            ArrayList<Bitmap> tracker = getCurrentTracker();
+            if (tracker == null)
+            {
+                throw new RuntimeException("tracker is null, make sure set tracker first");
+            }
+            
+            getCurrentTracker().add(bitmap);
             return new BitmapDrawable(res, bitmap);
         }
         else
@@ -87,5 +103,64 @@ public class DrawableUtil
             drawable.addFrame(getDrawable(res, resIds[i], opts), durations[i]);
         }
         return drawable;
+    }
+    
+    private static ArrayList<Bitmap> getCurrentTracker()
+    {
+        return mBitmapTracker.get(mCurrentTrackerId);
+    }
+    
+    /**
+     * @see DrawableUtil.{@link #recycle(int)}
+     * @see DrawableUtil.{@link #recycleAll()}
+     */
+    public static void addDrawableTracker(int trackerId)
+    {
+        if (mBitmapTracker.containsKey(trackerId))
+        {
+            throw new IllegalArgumentException("the tracker id has been used.");
+        }
+        
+        ArrayList<Bitmap> tracker = new ArrayList<Bitmap>();
+        mBitmapTracker.put(trackerId, tracker);
+    }
+    
+    public static void setCurrentTrackerId(int trackerId)
+    {
+        mCurrentTrackerId = trackerId;
+    }
+    
+    /**
+     * 释放已记录的所有Bitmap
+     * @param trackerId 用于记录使用DrawableUtil.getDrawable
+     * @see DrawableUtil.{@link #addDrawableTracker(int)}.
+     * @see DrawableUtil.{@link #recycleAll()}.
+     */
+    public static void recycle(int trackerId)
+    {
+        ArrayList<Bitmap> tracker = mBitmapTracker.get(trackerId);
+        for (Bitmap bmp : tracker)
+        {
+            if (bmp != null && !bmp.isRecycled())
+            {
+                Log.v(TAG, "recyle bitmap...");
+                bmp.recycle();
+            }
+        }
+        mBitmapTracker.remove(trackerId);
+    }
+    
+    /**
+     * 释放所有记录的Bitmap
+     * @see DrawableUtil.{@link #addDrawableTracker(int)}.
+     * @see DrawableUtil.{@link #recycle(int)}.
+     */
+    public static void recycleAll()
+    {
+        Set<Integer> keys = mBitmapTracker.keySet();
+        for (Integer trackerId : keys)
+        {
+            recycle(trackerId);
+        }
     }
 }
