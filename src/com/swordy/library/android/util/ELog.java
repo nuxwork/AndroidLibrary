@@ -1,7 +1,5 @@
 package com.swordy.library.android.util;
 
-import com.swordy.library.android.BuildConfig;
-
 public final class ELog
 {
     
