@@ -17,9 +17,9 @@ public final class ELog
     
     private static long previousTimeMillis = System.currentTimeMillis();
     
-    private static boolean enabled;
+    private static boolean enabled = true;
     
-    private static boolean allEnabled;
+    private static boolean allEnabled = true;
     
     public static void setEnabled(boolean enable)
     {
@@ -153,8 +153,8 @@ public final class ELog
         if (enable())
         {
             Thread thr = Thread.currentThread();
-            ELog.v(tag, "Thread[id:" + thr.getId() + ",name:" + thr.getName() + "priority:" + thr.getPriority()
-                + "group:" + thr.getThreadGroup().getName() + "]");
+            ELog.v(tag, "Thread[ id: " + thr.getId() + ", name: " + thr.getName() + ", priority: " + thr.getPriority()
+                + ", group: " + thr.getThreadGroup().getName() + " ]");
         }
     }
     
@@ -163,7 +163,8 @@ public final class ELog
         if (enable())
         {
             long current = System.currentTimeMillis();
-            ELog.v(tag, msg + "timeMillis[current: " + current + " , duration: " + (previousTimeMillis - current) + "]");
+            ELog.v(tag, msg + ": timeMillis[ current: " + current + " , duration: " + (previousTimeMillis - current)
+                + " ]");
             previousTimeMillis = current;
         }
     }
