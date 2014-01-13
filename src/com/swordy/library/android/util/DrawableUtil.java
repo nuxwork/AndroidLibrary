@@ -1,9 +1,10 @@
 package com.swordy.library.android.util;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -21,16 +22,20 @@ public class DrawableUtil
 {
     public static final String TAG = "AndroidLibrary.DrawableUtil";
     
-    private static HashMap<Integer, ArrayList<Bitmap>> mBitmapTracker = new HashMap<Integer, ArrayList<Bitmap>>();
-    
-    private static int mCurrentTrackerId;
+    /**
+     * HashMap<Context id instead of hashCode, HashMap<image resource id, decoded bitmap>>
+     */
+    private static HashMap<Integer, HashMap<Integer, Bitmap>> mBitmapTracker =
+        new HashMap<Integer, HashMap<Integer, Bitmap>>();
     
     private static Options mOpts;
     
-    public static Options getOptimizeOptions(Resources res)
+    public static synchronized Options getOptimizeOptions(Resources res)
     {
         if (mOpts != null)
+        {
             return mOpts;
+        }
         
         DisplayMetrics dm = res.getDisplayMetrics();
         mOpts = new Options();
@@ -41,127 +46,52 @@ public class DrawableUtil
         return mOpts;
     }
     
-    public static Drawable getDrawable(Resources res, int resId)
-    {
-        return getDrawable(res, resId, getOptimizeOptions(res));
-    }
-    
-    private static Drawable getDrawable(Resources res, int resId, Options opts)
-    {
-        if (resId != View.NO_ID)
-        {
-            Bitmap bitmap = BitmapFactory.decodeResource(res, resId, opts);
-            ArrayList<Bitmap> tracker = getCurrentTracker();
-            if (tracker == null)
-            {
-                throw new RuntimeException("tracker is null, make sure set tracker first");
-            }
-            
-            getCurrentTracker().add(bitmap);
-            return new BitmapDrawable(res, bitmap);
-        }
-        else
-        {
-            return null;
-        }
-    }
-    
-    public static Drawable getDrawable(Resources res, int normalId, int pressedId)
-    {
-        Options opts = getOptimizeOptions(res);
-        StateListDrawable drawable = new StateListDrawable();
-        drawable.addState(new int[] {android.R.attr.state_pressed}, getDrawable(res, pressedId, opts));
-        drawable.addState(new int[] {}, getDrawable(res, normalId, opts));
-        return drawable;
-    }
-    
-    public static Drawable getDrawable(Resources res, int normalId, int pressedId, int checkedId)
-    {
-        Options opts = getOptimizeOptions(res);
-        StateListDrawable drawable = new StateListDrawable();
-        drawable.addState(new int[] {android.R.attr.state_pressed}, getDrawable(res, pressedId, opts));
-        drawable.addState(new int[] {android.R.attr.state_checked}, getDrawable(res, checkedId, opts));
-        drawable.addState(new int[] {}, getDrawable(res, normalId, opts));
-        return drawable;
-    }
-    
-    public static LevelListDrawable getLevelListDrawable(Resources res, int... resId)
-    {
-        if (resId == null)
-            return null;
-        
-        LevelListDrawable d = new LevelListDrawable();
-        for (int id : resId)
-        {
-            d.addLevel(id, id, getDrawable(res, id));
-        }
-        return d;
-    }
-    
-    public static AnimationDrawable getAnimationDrawable(Resources res, int[] resIds, int[] durations, boolean oneShot)
-    {
-        if (resIds == null || durations == null || resIds.length == 0 || durations.length == 0)
-            return null;
-        
-        if (resIds.length != durations.length)
-        {
-            throw new IllegalArgumentException("resources not mapping with durations");
-        }
-        
-        Options opts = getOptimizeOptions(res);
-        AnimationDrawable drawable = new AnimationDrawable();
-        drawable.setOneShot(oneShot);
-        
-        for (int i = 0; i != resIds.length; i++)
-        {
-            drawable.addFrame(getDrawable(res, resIds[i], opts), durations[i]);
-        }
-        return drawable;
-    }
-    
-    private static ArrayList<Bitmap> getCurrentTracker()
-    {
-        return mBitmapTracker.get(mCurrentTrackerId);
-    }
-    
-    /**
-     * @see DrawableUtil.{@link #recycle(int)}
-     * @see DrawableUtil.{@link #recycleAll()}
-     */
-    public static void addDrawableTracker(int trackerId)
-    {
-        if (mBitmapTracker.containsKey(trackerId))
-        {
-            throw new IllegalArgumentException("the tracker id has been used.");
-        }
-        
-        ArrayList<Bitmap> tracker = new ArrayList<Bitmap>();
-        mBitmapTracker.put(trackerId, tracker);
-    }
-    
-    public static void setCurrentTrackerId(int trackerId)
-    {
-        mCurrentTrackerId = trackerId;
-    }
-    
     /**
      * 释放已记录的所有Bitmap
      * @param trackerId 用于记录使用DrawableUtil.getDrawable
      * @see DrawableUtil.{@link #addDrawableTracker(int)}.
      * @see DrawableUtil.{@link #recycleAll()}.
      */
-    public static void recycle(int trackerId)
+    public static void recycle(Context context)
     {
-        ArrayList<Bitmap> tracker = mBitmapTracker.get(trackerId);
-        for (Bitmap bmp : tracker)
+        recycle(context.hashCode());
+    }
+    
+    private static void recycle(int contextId)
+    {
+        Log.v(TAG, "recycle context : " + contextId);
+        HashMap<Integer, Bitmap> tracker = mBitmapTracker.get(contextId);
+        if (tracker == null)
         {
+            return;
+        }
+        
+        Set<Entry<Integer, Bitmap>> entries = tracker.entrySet();
+        for (Entry<Integer, Bitmap> entry : entries)
+        {
+            int resId = entry.getKey();
+            if (containInOtherContext(contextId, resId))
+            {
+                Log.v(TAG, "containInOtherContext : " + resId);
+                continue;
+            }
+            
+            Bitmap bmp = entry.getValue();
             if (bmp != null && !bmp.isRecycled())
             {
-                Log.v(TAG, "recyle bitmap...");
+                Log.v(TAG, "recyle bitmap > context : " + contextId + " res: " + entry.getKey());
                 bmp.recycle();
             }
         }
-        mBitmapTracker.remove(trackerId);
+        tracker.clear();
+        
+        mBitmapTracker.remove(contextId);
+        Log.v(TAG, "mBitmapTracker size: " + mBitmapTracker.size());
+        
+        if (mBitmapTracker.size() == 0)
+        {
+            mOpts = null;
+        }
     }
     
     /**
@@ -177,4 +107,148 @@ public class DrawableUtil
             recycle(trackerId);
         }
     }
+    
+    /**
+     * 判断资源是否在其它地方还在使用，如果是，则不进行释放
+     * @param contextId 当前需要释放该资源的Context id
+     * @param resId 需要释放的resource id
+     * @return true 表示该资源仍在其他地方使用中
+     */
+    private static boolean containInOtherContext(int contextId, int resId)
+    {
+        // TODO 该轮询费劲
+        Set<Entry<Integer, HashMap<Integer, Bitmap>>> entries = mBitmapTracker.entrySet();
+        for (Entry<Integer, HashMap<Integer, Bitmap>> entry : entries)
+        {
+            if (contextId == entry.getKey())
+            {
+                continue;
+            }
+            
+            HashMap<Integer, Bitmap> value = entry.getValue();
+            if (value.containsKey(resId))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public static Drawable getDrawable(Context context, int resId)
+    {
+        return getDrawable(context, resId, getOptimizeOptions(context.getResources()));
+    }
+    
+    public static Drawable getDrawable(Context context, int resId, Options opts)
+    {
+        if (resId == View.NO_ID)
+        {
+            return null;
+        }
+        
+        Bitmap bitmap = null;
+        Resources res = context.getResources();
+        
+        int contextId = context.hashCode();
+        HashMap<Integer, Bitmap> tracker = mBitmapTracker.get(contextId);
+        
+        // 创建新的追踪器
+        if (tracker == null)
+        {
+            tracker = new HashMap<Integer, Bitmap>();
+            mBitmapTracker.put(contextId, tracker);
+            Log.v(TAG, "add new tracker > context : " + contextId);
+        }
+        
+        // 如果该资源已经解码，则直接返回解码过的Bitmap
+        Set<Entry<Integer, HashMap<Integer, Bitmap>>> entries = mBitmapTracker.entrySet();
+        for (Entry<Integer, HashMap<Integer, Bitmap>> entry : entries)
+        {
+            HashMap<Integer, Bitmap> value = entry.getValue();
+            if (value.containsKey(resId))
+            {
+                Log.v(TAG, "repeat resource : " + resId);
+                bitmap = value.get(resId);
+                tracker.put(resId, bitmap);
+                break;
+            }
+        }
+        
+        if (bitmap == null)
+        {
+            bitmap = BitmapFactory.decodeResource(res, resId, opts);
+            tracker.put(resId, bitmap);
+            Log.v(TAG, "track bitmap > context : " + contextId + ", res : " + resId + ", size: " + tracker.size());
+        }
+        
+        return new BitmapDrawable(res, bitmap);
+    }
+    
+    public static Drawable getDrawable(Context context, int normalId, int pressedId)
+    {
+        StateListDrawable drawable = new StateListDrawable();
+        drawable.addState(new int[] {android.R.attr.state_pressed}, getDrawable(context, pressedId));
+        drawable.addState(new int[] {}, getDrawable(context, normalId));
+        return drawable;
+    }
+    
+    public static Drawable getDrawable(Context context, int normalId, int pressedId, int checkedId)
+    {
+        StateListDrawable drawable = new StateListDrawable();
+        drawable.addState(new int[] {android.R.attr.state_pressed}, getDrawable(context, pressedId));
+        drawable.addState(new int[] {android.R.attr.state_checked}, getDrawable(context, checkedId));
+        drawable.addState(new int[] {}, getDrawable(context, normalId));
+        return drawable;
+    }
+    
+    public static LevelListDrawable getLevelListDrawable(Context context, int... resId)
+    {
+        if (resId == null)
+        {
+            return null;
+        }
+        
+        LevelListDrawable d = new LevelListDrawable();
+        for (int id : resId)
+        {
+            d.addLevel(id, id, getDrawable(context, id));
+        }
+        return d;
+    }
+    
+    public static AnimationDrawable getAnimationDrawable(Context context, int[] resIds, int duration, boolean oneShot)
+    {
+        int length = resIds.length;
+        int dur = duration / length;
+        int[] durations = new int[length];
+        for (int i = 0; i != length; i++)
+        {
+            durations[i] = dur;
+        }
+        
+        return getAnimationDrawable(context, resIds, durations, oneShot);
+    }
+    
+    public static AnimationDrawable getAnimationDrawable(Context context, int[] resIds, int[] durations, boolean oneShot)
+    {
+        if (resIds == null || durations == null || resIds.length == 0 || durations.length == 0)
+        {
+            return null;
+        }
+        
+        if (resIds.length != durations.length)
+        {
+            throw new IllegalArgumentException("resources not mapping with durations");
+        }
+        
+        AnimationDrawable drawable = new AnimationDrawable();
+        drawable.setOneShot(oneShot);
+        
+        for (int i = 0; i != resIds.length; i++)
+        {
+            drawable.addFrame(getDrawable(context, resIds[i]), durations[i]);
+        }
+        return drawable;
+    }
+    
 }
