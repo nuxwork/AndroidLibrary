@@ -11,6 +11,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -191,8 +192,17 @@ public class NumberView extends View
             Drawable current = background.getCurrent();
             if (current instanceof ColorDrawable)
             {
-                mPaint.setColor(((ColorDrawable)current).getColor());
-                canDraw = true;
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB)
+                {
+                    mPaint.setColor(((ColorDrawable)current).getColor());
+                    canDraw = true;
+                }
+                else
+                {
+                    current.setBounds(mDrawingRect);
+                    current.draw(canvas);
+                    canDraw = false;
+                }
             }
             else
             {
