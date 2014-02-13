@@ -2,7 +2,7 @@
 <resources>
 
     <item name="tabs" type="id"/>
-    <item name="viewPager" type="id"/>
+    <item name="pagers" type="id"/>
     <item name="indicator" type="id"/>
 
 </resources>

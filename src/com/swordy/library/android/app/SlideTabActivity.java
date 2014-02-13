@@ -43,14 +43,14 @@ public class SlideTabActivity extends FragmentActivity implements
 		super.onContentChanged();
 
 		mTabWidget = (TabWidget) findViewById(R.id.tabs);
-		mViewPager = (ViewPager) findViewById(R.id.viewPager);
+		mViewPager = (ViewPager) findViewById(R.id.pagers);
 		mIndicator = (PageIndicator) findViewById(R.id.indicator);
 
 		if (mTabWidget == null || mViewPager == null) {
 			throw new RuntimeException(
 					"Your content must have a TabWidget whose id attribute is "
 							+ "'R.id.tabs' and a ViewPager whose id attribute is "
-							+ "'R.id.viewPager'");
+							+ "'R.id.pagers'");
 		}
 
 //		onCreateTabs(mTabWidget);
