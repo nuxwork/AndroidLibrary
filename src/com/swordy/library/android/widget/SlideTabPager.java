@@ -9,24 +9,30 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Gravity;
 import android.widget.Adapter;
 import android.widget.LinearLayout;
 import android.widget.TabWidget;
 
+import com.swordy.library.android.R;
+
 /**
  * 可滑动的TabHost
  * 
- * @author jian.yang
+ * @author swordy
  * 
  */
 public class SlideTabPager extends LinearLayout implements
 		ViewPager.OnPageChangeListener {
-	private static final String TAG = "video2.SlideTabPager";
+	private static final String TAG = "SlideTabPager";
 
 	private TabWidget mTabWidget;
 	private ViewPager mViewPager;
 	private boolean mSmoothScroll = true;
+	private OnPageChangedListener mOnPageChangedListener;
+
+	public interface OnPageChangedListener {
+		void onPageChanged(int position);
+	}
 
 	/* TODO: indicator */
 
@@ -44,20 +50,32 @@ public class SlideTabPager extends LinearLayout implements
 	}
 
 	private void init(Context context) {
-		mTabWidget = new TabWidget(context);
-		mTabWidget.setId(android.R.id.tabs);
-		mTabWidget.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-
-		mViewPager = new ViewPager(context);
-		mViewPager.setId(android.R.id.tabcontent);
-
 		setOrientation(VERTICAL);
-		addView(mTabWidget, new LayoutParams(LayoutParams.MATCH_PARENT,
-				LayoutParams.WRAP_CONTENT));
-		addView(mViewPager, new LayoutParams(LayoutParams.MATCH_PARENT,
-				LayoutParams.MATCH_PARENT));
+	}
+	
+	@Override
+	protected void onFinishInflate() {
+		super.onFinishInflate();
+		mTabWidget = (TabWidget) findViewById(R.id.tabs);
+		mViewPager = (ViewPager) findViewById(R.id.pagers);
+
+		if (mTabWidget == null || mViewPager == null) {
+			throw new RuntimeException(
+					"Your content must have a TabWidget whose id attribute is "
+							+ "'R.id.tabs' and a ViewPager whose id attribute is "
+							+ "'R.id.pagers'");
+		}
 
 		handTabListener();
+		mViewPager.setOnPageChangeListener(this);
+	}
+	
+	@Override
+	protected void onAttachedToWindow() {
+		// TODO Auto-generated method stub
+		super.onAttachedToWindow();
+		
+
 	}
 
 	public void setTabAdapter(Adapter adapter) {
@@ -78,6 +96,10 @@ public class SlideTabPager extends LinearLayout implements
 			mViewPager.setAdapter(adapter);
 			mViewPager.setCurrentItem(0);
 		}
+	}
+
+	public void setOnPageChangedListener(OnPageChangedListener listener) {
+		mOnPageChangedListener = listener;
 	}
 
 	public void setCurrentItem(int index) {
@@ -113,14 +135,20 @@ public class SlideTabPager extends LinearLayout implements
 		Log.i(TAG, "@Method --> onPageSelected: " + index);
 
 		mTabWidget.setCurrentTab(index);
+
+		if (mOnPageChangedListener != null) {
+			mOnPageChangedListener.onPageChanged(index);
+		}
 	}
 
 	@Override
 	public void onPageScrolled(int index, float arg1, int arg2) {
+		// do nothing
 	}
 
 	@Override
 	public void onPageScrollStateChanged(int index) {
+		// do nothing
 	}
 
 	/**
@@ -155,7 +183,7 @@ public class SlideTabPager extends LinearLayout implements
 	/**
 	 * implements interface "TabWidget.OnTabSelectionChanged" using reflection
 	 * 
-	 * @author jian.yang
+	 * @author swordy
 	 */
 	private class OnTabSelectionChangedImpl implements InvocationHandler {
 
