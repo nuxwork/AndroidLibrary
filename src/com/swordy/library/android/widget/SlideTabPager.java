@@ -100,6 +100,10 @@ public class SlideTabPager extends LinearLayout implements
 
 	public void setOnPageChangedListener(OnPageChangedListener listener) {
 		mOnPageChangedListener = listener;
+		
+		if(listener != null){
+			listener.onPageChanged(mViewPager.getCurrentItem());
+		}
 	}
 
 	public void setCurrentItem(int index) {
@@ -187,6 +191,7 @@ public class SlideTabPager extends LinearLayout implements
 	 */
 	private class OnTabSelectionChangedImpl implements InvocationHandler {
 
+		@SuppressWarnings("unused")
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args)
 				throws Throwable {
