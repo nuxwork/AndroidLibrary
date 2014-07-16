@@ -40,5 +40,8 @@
     <declare-styleable name="CheckText">
         <attr name="checked" />
     </declare-styleable>
+    <declare-styleable name="RoundLayout">
+        <attr name="radii" format="string" />
+    </declare-styleable>
 
 </resources>

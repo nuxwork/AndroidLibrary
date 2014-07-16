@@ -1,6 +1,6 @@
 package com.swordy.library.android.util;
 
-public final class ELog
+public final class ALog
 {
     
     public static final int VERBOSE = android.util.Log.VERBOSE;
@@ -153,7 +153,7 @@ public final class ELog
         if (enable())
         {
             Thread thr = Thread.currentThread();
-            ELog.v(tag, "Thread[ id: " + thr.getId() + ", name: " + thr.getName() + ", priority: " + thr.getPriority()
+            ALog.v(tag, "Thread[ id: " + thr.getId() + ", name: " + thr.getName() + ", priority: " + thr.getPriority()
                 + ", group: " + thr.getThreadGroup().getName() + " ]");
         }
     }
@@ -163,7 +163,7 @@ public final class ELog
         if (enable())
         {
             long current = System.currentTimeMillis();
-            ELog.v(tag, msg + ": timeMillis[ current: " + current + " , duration: " + (previousTimeMillis - current)
+            ALog.v(tag, msg + ": timeMillis[ current: " + current + " , duration: " + (previousTimeMillis - current)
                 + " ]");
             previousTimeMillis = current;
         }
